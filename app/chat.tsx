@@ -7,7 +7,7 @@ const GOOGLE_GEMINI_API_URL = process.env.EXPO_PUBLIC_GOOGLE_GEMINI_API_URL ;
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 
 export default function TajikChatPage() {
-  const { t, colors } = useLanguage();
+  const { t, colors, language } = useLanguage();
   const [messages, setMessages] = useState<{ role: 'user' | 'bot'; text: string }[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,7 +35,7 @@ export default function TajikChatPage() {
               role: 'user',
               parts: [
                 {
-                  text: `Этот запрос относится к таджикскому языку. Пожалуйста, ответь в формате Markdown.\n\n${input}`,
+                  text: `This query is related to Tajik language, it will clarify the meaning of words, sentences, etc. in Tajik language. Answer in the language in which the question is written, most often not in Tajik\n\n${input}`,
                 },
               ],
             },
@@ -60,7 +60,7 @@ export default function TajikChatPage() {
       setMessages([...newMessages, { role: 'bot', text: botReply.trim() }]);
     } catch (err) {
       console.error(err);
-      setMessages([...newMessages, { role: 'bot', text: 'Произошла ошибка. Попробуйте снова.' }]);
+      setMessages([...newMessages, { role: 'bot', text: t('error') }]);
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ export default function TajikChatPage() {
         <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.text }}>
           Tajik Language Chat
         </Text>
-        <Button title="Домой" onPress={() => router.push('/')} />
+        <Button title={t('home')} onPress={() => router.push('/')} />
       </View>
 
       <ScrollView
@@ -137,7 +137,7 @@ export default function TajikChatPage() {
             backgroundColor: colors.card,
             color: colors.text,
           }}
-          placeholder="Задайте вопрос по таджикскому языку..."
+          placeholder={t('placeholder')}
           placeholderTextColor={colors.textTertiary}
           value={input}
           onChangeText={setInput}
@@ -149,7 +149,7 @@ export default function TajikChatPage() {
           {loading ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Button title="Отправить" onPress={askBot} disabled={loading} />
+            <Button title={t('send')} onPress={askBot} disabled={loading} />
           )}
         </View>
       </View>
