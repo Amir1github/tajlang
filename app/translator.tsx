@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const Translator = () => {
   const router = useRouter();
-  const { t, colors } = useLanguage();
+  const { t, colors, language } = useLanguage();
   const [text, setText] = useState('');
   const [translation, setTranslation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -16,20 +16,20 @@ const Translator = () => {
   const [targetLanguage, setTargetLanguage] = useState('en'); // Add target language state
   
   const supportedLanguages = [
-    { code: 'en', name: 'Английский' },
+    { code: 'en', name: 'English' },
     { code: 'ru', name: 'Русский' },
-    { code: 'fr', name: 'Французский' },
-    { code: 'es', name: 'Испанский' },
-    { code: 'de', name: 'Немецкий' },
-    { code: 'zh', name: 'Китайский' },
-    { code: 'ar', name: 'Арабский' },
-    { code: 'fa', name: 'Персидский' },
-    { code: 'uz', name: 'Узбекский' },
+    { code: 'fr', name: 'Français' },
+    { code: 'es', name: 'Español' },
+    { code: 'de', name: 'Deutsch' },
+    { code: 'zh', name: '中國人' },
+    { code: 'ar', name: 'عربي' },
+    { code: 'fa', name: 'فارسی' },
+    { code: 'uz', name: 'ozbek' },
   ];
 
   const translateText = async () => {
     if (!text.trim()) {
-      setError('Пожалуйста, введите текст для перевода');
+      setError(t('errorEmpty'));
       return;
     }
 
@@ -58,11 +58,11 @@ const Translator = () => {
       if (response.data.responseData) {
         setTranslation(response.data.responseData.translatedText);
       } else {
-        setError('Не удалось выполнить перевод. Попробуйте снова.');
+        setError(t('errorApi'));
       }
     } catch (err) {
       console.error('Translation error:', err);
-      setError('Произошла ошибка при переводе. Попробуйте позже.');
+      setError(t('errorApi'));
     } finally {
       setIsLoading(false);
     }
@@ -295,21 +295,21 @@ const Translator = () => {
           style={styles.homeBtn}
           onPress={() => router.push('/')}
         >
-          <Text style={styles.homeBtnText}>Домой</Text>
+          <Text style={styles.homeBtnText}>{t('home')}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Переводчик на таджикский язык</Text>
+        <Text style={styles.title}>{t('translatorTitle')}</Text>
         <View style={{ width: 80 }} />
       </View>
       
       <Text style={styles.warningText}>
-        Внимание: Мы не отвечаем за качество перевода этого сервиса. Для лучших результатов формируйте запросы полными предложениями.
+        {t('warning')}
       </Text>
       
       <View style={styles.translatorFlex}>
         <View style={styles.translatorBox}>
           <View style={styles.labelContainer}>
             <Text style={styles.label}>
-              {direction === 'to-tajik' ? 'Исходный текст' : 'Таджикский текст'}
+              {direction === 'to-tajik' ? t('inputLabel') : 'Таджикский текст'}
             </Text>
             {direction === 'to-tajik' && (
               <LanguagePicker
@@ -325,7 +325,7 @@ const Translator = () => {
             style={styles.textarea}
             placeholder={
               direction === 'to-tajik' 
-                ? 'Введите текст для перевода на таджикский (рекомендуется использовать полные предложения)...' 
+                ? t('inputPlaceholder' )
                 : 'Введите таджикский текст для перевода (рекомендуется использовать полные предложения)...'
             }
             placeholderTextColor={colors.textTertiary}
@@ -346,7 +346,7 @@ const Translator = () => {
           <View style={styles.labelContainer}>
             <Text style={styles.label}>
               {direction === 'to-tajik' 
-                ? 'Перевод на таджикский' 
+                ? t('outputLabel')
                 : `Перевод на ${supportedLanguages.find(l => l.code === targetLanguage)?.name || 'выбранный язык'}`
               }
             </Text>
@@ -365,7 +365,7 @@ const Translator = () => {
               </View>
             ) : (
               <Text style={translation ? styles.resultText : styles.placeholderText}>
-                {translation || 'Здесь появится перевод'}
+                {translation || t('Translation will appear here')}
               </Text>
             )}
           </View>
@@ -383,15 +383,15 @@ const Translator = () => {
         ]}
       >
         <Text style={styles.translateBtnText}>
-          {isLoading ? 'Перевожу...' : 'Перевести'}
+          {isLoading ? t('translating') : t('translate')}
         </Text>
       </TouchableOpacity>
       
       <View style={styles.info}>
-        <Text style={styles.infoText}>Используется бесплатный API MyMemory Translation</Text>
-        <Text style={styles.infoText}>Ограничение: ~1000 символов за запрос</Text>
+        <Text style={styles.infoText}>{t('infoApi')}</Text>
+        <Text style={styles.infoText}>{t('infoLimit')}</Text>
         <Text style={[styles.infoText, { color: colors.error || '#ef4444' }]}>
-          Для получения более точного перевода используйте полные предложения
+          {t('infoTip')}
         </Text>
       </View>
     </ScrollView>
