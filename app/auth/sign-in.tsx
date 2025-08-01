@@ -29,40 +29,37 @@ export default function SignIn() {
   }
 
   async function handleGoogleSignIn() {
-    try {
-      setOauthLoading(true);
-      setError(null);
+  try {
+    setOauthLoading(true);
+    setError(null);
 
-      const redirectUrl = Platform.OS === 'web' 
-        ? `${window.location.origin}/auth/callback`
-        : 'tajlang://auth-callback';
+    const redirectUrl = Platform.OS === 'web' 
+      ? `${window.location.origin}/auth/callback`
+      : 'tajlang://auth-callback'; // убедитесь, что scheme в app.json = "tajlang"
 
-      console.log('Using redirect URL:', redirectUrl);
-
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account',
-          },
-          skipBrowserRedirect: false,
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account',
         },
-      });
+        skipBrowserRedirect: false,
+      },
+    });
 
-      if (oauthError) throw oauthError;
+    // Не нужно обрабатывать user/session здесь!
+    // Supabase сам сделает редирект на /auth/callback
+    // Вся логика создания профиля и router.replace('/profile') должна быть в callback.tsx
 
-      // The redirect will happen automatically for web
-      // No need to handle auth state changes here for web OAuth
-
-    } catch (error: any) {
-      console.error('Google OAuth error:', error);
-      setError(error.message || 'Failed to sign in with Google');
-    } finally {
-      setOauthLoading(false);
-    }
+  } catch (error: any) {
+    console.error('Google OAuth error:', error);
+    setError(error.message || 'Failed to sign in with Google');
+  } finally {
+    setOauthLoading(false);
   }
+}
 
   async function handleOAuthSuccess(user: any) {
     try {
