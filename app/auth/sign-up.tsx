@@ -73,7 +73,7 @@ export default function SignUp() {
     setLoading(true);
     setError(null);
 
-    const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+    await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: 'https://ywkrnufwzfkzuokhkuzc.supabase.co/auth/v1/callback',
@@ -84,35 +84,16 @@ export default function SignUp() {
       },
     });
 
-    if (oauthError) throw oauthError;
+    // Не нужно обрабатывать user/session здесь!
+    // Supabase сам сделает редирект на /auth/callback
+    // Вся логика создания профиля и router.replace('/profile') должна быть в callback.tsx
 
-    if (!data?.session?.user) {
-      throw new Error("Google OAuth failed: no user data returned");
-    }
-
-    const { user } = data.session;
-
-    // Проверка email (если требуется)
-    if (!user.email) {
-      throw new Error("Google OAuth failed: email permission denied");
-    }
-
-    // Создание профиля
-    await createProfileIfNotExists(
-      user.id,
-      user.user_metadata.full_name || user.email.split('@')[0] || `user_${Math.random().toString(36).substring(2, 8)}`,
-      user.email,
-      user.user_metadata.avatar_url
-    );
-
-    router.replace('/profile');
   } catch (error: any) {
     setError(error.message || 'Failed to sign in with Google');
   } finally {
     setLoading(false);
   }
 }
-
   async function sendVerificationEmail() {
     const code = generateRandomCode();
     setSentCode(code);

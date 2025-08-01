@@ -39,26 +39,36 @@ export default function OurTeamScreen() {
       </View>
 
       <View style={styles.memberContainer}>
-        <Animated.Image
-          source={require('@/assets/images/member1.png')}
-          style={[
-            styles.avatar,
-            {
-              transform: [{ scale: scaleAnim }],
-              borderColor: colors.border,
-            },
-          ]}
-          resizeMode="cover"
-        />
-        <Text style={[styles.roleText, { color: colors.textSecondary }]}>
-          {language === 'ru' ? 'Разработчик сайта' : 'Website Developer'}
-        </Text>
-      </View>
+  <Animated.Image
+    source={require('@/assets/images/member1.jpg')}
+    style={[
+      styles.avatar,
+      {
+        transform: [{ scale: scaleAnim }],
+        borderColor: colors.border,
+      },
+    ]}
+    resizeMode="cover"
+  />
+  <Text style={[styles.nameText, { color: colors.text }]}>
+    {language === 'ru' ? 'Хаитов Амир' : 'Khaitov Amir'}
+  </Text>
+  <Text style={[styles.roleText, { color: colors.textSecondary }]}>
+    {language === 'ru' ? 'Разработчик сайта' : 'Website Developer'}
+  </Text>
+</View>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  nameText: {
+  fontSize: 18,
+  fontWeight: '600',
+  marginBottom: 4,
+},
+
   container: {
     flex: 1,
     padding: 16,
