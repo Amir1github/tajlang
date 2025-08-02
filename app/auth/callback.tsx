@@ -1,82 +1,142 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { supabase } from '@/lib/supabase';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-
-async function createUserProfile(user: any) {
-  if (!user.email) {
-    throw new Error('Google did not return email. Cannot create profile.');
-  }
-
-  const username = user.user_metadata?.full_name?.trim() ||
-    user.email?.split('@')[0]?.trim() ||
-    `user_${Math.random().toString(36).substring(2, 8)}`;
-
-  const avatarUrl = user.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
-
-  const { error: upsertError } = await supabase.from('profiles').upsert({
-    id: user.id,
-    username,
-    email: user.email,
-    full_name: user.user_metadata?.full_name || username,
-    avatar_url: avatarUrl,
-  });
-
-  if (upsertError) {
-    console.error('Profile upsert error:', upsertError);
-    throw upsertError;
-  }
-
-  // Проверяем, что профиль действительно создан
-  const { data: profile, error: selectError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .single();
-
-  if (selectError || !profile) {
-    console.error('Profile select error:', selectError);
-    throw selectError || new Error('Profile not created');
-  }
-}
+import { supabase } from '@/lib/supabase';
 
 export default function OAuthCallback() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error('Supabase getUser error:', userError);
-        router.replace('/auth/sign-in');
-        setLoading(false);
-        return;
-      }
-      if (user) {
-        try {
-          await createUserProfile(user);
-          router.replace('/profile');
-        } catch (error) {
-          console.error('Profile creation error:', error);
-          router.replace('/auth/sign-in');
-        } finally {
-          setLoading(false);
+    console.log('[OAuthCallback] useEffect стартовал');
+    console.log('[OAuthCallback] Current URL:', window.location.href);
+    
+    const handleCallback = async () => {
+      try {
+        // Проверяем, есть ли токены в URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        
+        if (accessToken) {
+          console.log('[OAuthCallback] Найден access_token, устанавливаем сессию');
+          const refreshToken = hashParams.get('refresh_token');
+          
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+          });
+
+          if (error) {
+            console.error('[OAuthCallback] Ошибка установки сессии:', error);
+            throw error;
+          }
+
+          if (data?.user) {
+            console.log('[OAuthCallback] Сессия установлена для пользователя:', data.user.id);
+            // useAuth автоматически обработает этого пользователя и перенаправит
+            // Просто ждем
+            return;
+          }
         }
-      } else {
-        router.replace('/auth/sign-in');
-        setLoading(false);
+
+        // Если токенов нет, проверяем текущую сессию
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.log('[OAuthCallback] Найдена существующая сессия, перенаправляем');
+          router.replace('/profile');
+          return;
+        }
+
+        // Если ничего не найдено, возвращаемся к входу
+        console.log('[OAuthCallback] Сессия не найдена, возвращаемся к входу');
+        setError('Не удалось завершить авторизацию');
+        setTimeout(() => {
+          router.replace('/auth/sign-in');
+        }, 2000);
+
+      } catch (err) {
+        console.error('[OAuthCallback] Ошибка:', err);
+        setError('Произошла ошибка при авторизации');
+        setTimeout(() => {
+          router.replace('/auth/sign-in');
+        }, 2000);
+      } finally {
+        // Убираем loading через 5 секунд в любом случае
+        setTimeout(() => {
+          setLoading(false);
+        }, 5000);
       }
-    })();
+    };
+
+    handleCallback();
+
+    // Подписка на изменения auth состояния для отслеживания успешной авторизации
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('[OAuthCallback] Auth state change:', event, session?.user?.id || 'нет');
+        
+        // Если пользователь вошел и мы все еще на callback странице, перенаправляем
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('[OAuthCallback] Пользователь вошел, перенаправляем через 1 сек');
+          setTimeout(() => {
+            router.replace('/profile');
+          }, 1000);
+        }
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.text}>Завершаем авторизацию...</Text>
+        <Text style={styles.subText}>Это может занять несколько секунд</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.subText}>Перенаправляем обратно...</Text>
       </View>
     );
   }
 
   return null;
 }
+
+  
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    padding: 20,
+  },
+  text: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+  },
+  subText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff0000',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+});

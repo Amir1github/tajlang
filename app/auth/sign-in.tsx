@@ -28,16 +28,22 @@ export default function SignIn() {
     }
   }
 
-  async function handleGoogleSignIn() {
+  // Замените функцию handleGoogleSignIn в вашем sign-in.tsx на эту:
+
+async function handleGoogleSignIn() {
   try {
     setOauthLoading(true);
     setError(null);
+    
+    // Проверяем, что мы в веб-среде
+    if (typeof window === 'undefined') {
+      throw new Error('OAuth доступен только в веб-браузере');
+    }
 
-    const redirectUrl = Platform.OS === 'web' 
-      ? `${window.location.origin}/auth/callback`
-      : 'tajlang://auth-callback'; // убедитесь, что scheme в app.json = "tajlang"
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log('[OAuth] Redirect URL:', redirectUrl);
 
-    await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
@@ -49,59 +55,26 @@ export default function SignIn() {
       },
     });
 
-    // Не нужно обрабатывать user/session здесь!
-    // Supabase сам сделает редирект на /auth/callback
-    // Вся логика создания профиля и router.replace('/profile') должна быть в callback.tsx
+    if (error) {
+      throw error;
+    }
+
+    console.log('[OAuth] Инициализация OAuth успешна:', data);
+    
+    // Supabase автоматически перенаправит на callback страницу
+    // Не нужно делать ничего здесь - вся логика в callback.tsx
 
   } catch (error: any) {
     console.error('Google OAuth error:', error);
-    setError(error.message || 'Failed to sign in with Google');
+    setError(error.message || 'Не удалось войти через Google');
   } finally {
     setOauthLoading(false);
   }
 }
 
-  async function handleOAuthSuccess(user: any) {
-    try {
-      // Check if profile exists
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+// Удалите функцию handleOAuthSuccess, она больше не нужна
 
-      if (!profileData) {
-        // Create new profile
-        const username = user.user_metadata?.full_name || 
-                        user.email?.split('@')[0] || 
-                        `user${Math.floor(Math.random() * 1000)}`;
-        
-        const avatarUrl = user.user_metadata?.avatar_url || 
-                         `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
-
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert([{
-            id: user.id,
-            username,
-            avatar_url: avatarUrl,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || username,
-          }]);
-
-        if (insertError) {
-          console.error('Profile creation error:', insertError);
-          // Don't throw error, profile might already exist
-        }
-      }
-
-      router.replace('/profile');
-    } catch (error) {
-      console.error('Error handling OAuth success:', error);
-      // Still redirect to profile, as auth was successful
-      router.replace('/profile');
-    }
-  }
+  
 
   return (
   <KeyboardAvoidingView

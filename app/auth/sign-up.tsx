@@ -68,28 +68,45 @@ export default function SignUp() {
     }
   }
 
-  async function handleOAuthSignUp(provider: 'google') {
+  // Замените функцию handleOAuthSignUp в вашем sign-up.tsx на эту:
+
+async function handleOAuthSignUp(provider: 'google') {
   try {
     setLoading(true);
     setError(null);
-
-    await supabase.auth.signInWithOAuth({
+    
+    // Проверяем, что мы в веб-среде
+    if (typeof window === 'undefined') {
+      throw new Error('OAuth доступен только в веб-браузере');
+    }
+    
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log('[OAuth] Redirect URL:', redirectUrl);
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: 'https://ywkrnufwzfkzuokhkuzc.supabase.co/auth/v1/callback',
+        redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
         },
+        skipBrowserRedirect: false,
       },
     });
 
-    // Не нужно обрабатывать user/session здесь!
-    // Supabase сам сделает редирект на /auth/callback
-    // Вся логика создания профиля и router.replace('/profile') должна быть в callback.tsx
+    if (error) {
+      throw error;
+    }
+
+    console.log('[OAuth] Инициализация OAuth успешна:', data);
+    
+    // Supabase автоматически перенаправит на callback страницу
+    // Не нужно делать ничего здесь - вся логика в callback.tsx
 
   } catch (error: any) {
-    setError(error.message || 'Failed to sign in with Google');
+    console.error('[OAuth] Ошибка:', error);
+    setError(error.message || 'Не удалось войти через Google');
   } finally {
     setLoading(false);
   }
@@ -299,7 +316,7 @@ export default function SignUp() {
           <Animated.View entering={FadeInUp.delay(700)} style={styles.linkContainer}>
             <Link href="/auth/sign-in">
               <Text style={styles.linkText}>
-                Already have an account? <Text style={styles.linkHighlight}>Sign in</Text>
+                lready have an account? <Text style={styles.linkHighlight}>Sign in</Text>
               </Text>
             </Link>
           </Animated.View>
