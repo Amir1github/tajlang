@@ -8,7 +8,19 @@ const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
-
+export async function getUser() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('[supabase.ts] Ошибка получения пользователя:', error);
+      return { user: null, error };
+    }
+    return { user: data?.user || null, error: null };
+  } catch (err) {
+    console.error('[supabase.ts] Исключение при получении пользователя:', err);
+    return { user: null, error: err };
+  }
+}
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
@@ -162,4 +174,6 @@ export async function updateUserProgress(
     console.error('Error updating user progress:', error);
     return { error: error as Error };
   }
+
+// Получить текущего пользователя из Supabase Auth
 }
