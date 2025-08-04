@@ -1,3 +1,5 @@
+
+import AnimatedWordsBackground from '@/components/AnimatedWordsBackground';
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, Image, ActivityIndicator } from 'react-native';
 import { Link, router } from 'expo-router';
@@ -72,118 +74,135 @@ async function handleGoogleSignIn() {
   }
 }
 
-// Удалите функцию handleOAuthSuccess, она больше не нужна
-
-  
 
   return (
-  <KeyboardAvoidingView
-    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    style={styles.container}
-  >
-    <View style={styles.content}>
-      <Image
-        source={require('@/assets/images/icon.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-      <Animated.Text entering={FadeInDown.duration(500)} style={styles.title}>
-        Welcome Back 👋
-      </Animated.Text>
+    <View style={styles.wrapper}>
+      {/* Фоновый слой с анимированными словами */}
+      <View style={styles.backgroundLayer}>
+        {Array.from({ length: 12 }).map((_, i) => (
+          <AnimatedWordsBackground key={`word-${i}-${Date.now()}`} />
+        ))}
+      </View>
 
-      {error && (
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.errorContainer}>
-          <FontAwesome name="exclamation-circle" size={16} color="#dc2626" />
-          <Text style={styles.errorText}>{error}</Text>
-        </Animated.View>
-      )}
+      {/* Основной контент */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
+      >
+        <View style={styles.content}>
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Animated.Text entering={FadeInDown.duration(500)} style={styles.title}>
+            Welcome Back 👋
+          </Animated.Text>
 
-      <Animated.View entering={FadeInUp.delay(200)} style={styles.oauthContainer}>
-        <Pressable
-          style={[styles.googleButton, oauthLoading && styles.buttonDisabled]}
-          onPress={handleGoogleSignIn}
-          disabled={oauthLoading || loading}
-        >
-          {oauthLoading ? (
-            <ActivityIndicator color="#4285f4" size="small" />
-          ) : (
-            <FontAwesome name="google" size={18} color="#4285f4" />
+          {error && (
+            <Animated.View entering={FadeInDown.delay(200)} style={styles.errorContainer}>
+              <FontAwesome name="exclamation-circle" size={16} color="#dc2626" />
+              <Text style={styles.errorText}>{error}</Text>
+            </Animated.View>
           )}
-          <Text style={styles.googleButtonText}>
-            {oauthLoading ? 'Signing in...' : 'Continue with Google'}
-          </Text>
-        </Pressable>
-      </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(300)} style={styles.dividerContainer}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>or</Text>
-        <View style={styles.dividerLine} />
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(200)} style={styles.oauthContainer}>
+            <Pressable
+              style={[styles.googleButton, oauthLoading && styles.buttonDisabled]}
+              onPress={handleGoogleSignIn}
+              disabled={oauthLoading || loading}
+            >
+              {oauthLoading ? (
+                <ActivityIndicator color="#4285f4" size="small" />
+              ) : (
+                <FontAwesome name="google" size={18} color="#4285f4" />
+              )}
+              <Text style={styles.googleButtonText}>
+                {oauthLoading ? 'Signing in...' : 'Continue with Google'}
+              </Text>
+            </Pressable>
+          </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(400)} style={styles.inputWrapper}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#9ca3af"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(300)} style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(500)} style={styles.inputWrapper}>
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#9ca3af"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(400)} style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#9ca3af"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(600)} style={styles.buttonWrapper}>
-        <Pressable
-          style={[styles.button, (loading || oauthLoading) && styles.buttonDisabled]}
-          onPress={handleSignIn}
-          disabled={loading || oauthLoading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#ffffff" size="small" />
-          ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
-          )}
-        </Pressable>
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(500)} style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#9ca3af"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(700)} style={styles.linkWrapper}>
-        <Link href="/auth/sign-up">
-          <Text style={styles.linkText}>
-            Don't have an account? <Text style={styles.linkHighlight}>Sign up</Text>
-          </Text>
-        </Link>
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(600)} style={styles.buttonWrapper}>
+            <Pressable
+              style={[styles.button, (loading || oauthLoading) && styles.buttonDisabled]}
+              onPress={handleSignIn}
+              disabled={loading || oauthLoading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#ffffff" size="small" />
+              ) : (
+                <Text style={styles.buttonText}>Sign In</Text>
+              )}
+            </Pressable>
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(700)} style={styles.linkWrapper}>
+            <Link href="/auth/sign-up">
+              <Text style={styles.linkText}>
+                Don't have an account? <Text style={styles.linkHighlight}>Sign up</Text>
+              </Text>
+            </Link>
+          </Animated.View>
+        </View>
+      </KeyboardAvoidingView>
     </View>
-  </KeyboardAvoidingView>
-);
-
+  );
 }
 
 const styles = StyleSheet.create({
-  content: {
-  width: '90%',
-  maxWidth: 360,
-  alignItems: 'center',
-},
-
+  wrapper: {
+    flex: 1,
+    backgroundColor: '#f8fafc', // светлый фон
+  },
+  backgroundLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
     padding: 24,
+    
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  content: {
+    width: '90%',
+    maxWidth: 360,
+    alignItems: 'center',
+   
+
+    
   },
   logo: {
     width: 120,
