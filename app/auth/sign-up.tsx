@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, Modal, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import { Link, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { FontAwesome } from '@expo/vector-icons';
 import { User, Mail, Lock, AlertCircle, Shield } from 'lucide-react-native';
 import * as EmailJS from '@emailjs/browser';
-
+import AnimatedWordsBackground from '@/components/AnimatedWordsBackground';
 // Initialize EmailJS
 EmailJS.init(process.env.EXPO_PUBLIC_EMAILJS_PUBLIC_KEY!); // Your public key
 const EXPO_PUBLIC_EMAILJS_SERVICE_ID = process.env.EXPO_PUBLIC_EMAILJS_SERVICE_ID!;
@@ -219,6 +219,13 @@ async function handleOAuthSignUp(provider: 'google') {
   }
 
   return (
+    <View style={styles.wrapper}>
+          {/* Фоновый слой с анимированными словами */}
+          <View style={styles.backgroundLayer}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <AnimatedWordsBackground key={`word-${i}-${Date.now()}`} />
+            ))}
+          </View>
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
@@ -376,13 +383,26 @@ async function handleOAuthSignUp(provider: 'google') {
         </View>
       </Modal>
     </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    backgroundColor: '#f8fafc', // светлый фон
+  },
+  backgroundLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    padding: 24,
+    
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
   scrollContent: {
     flexGrow: 1,
