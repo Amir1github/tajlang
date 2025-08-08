@@ -58,6 +58,7 @@ export type WordsSectionProps = {
   showInstructions: boolean;
   onStartInstructions: () => void;
   onStartTest: () => void;
+  id: string; // Добавлено для передачи ID уровня
 };
 
 export type TestSectionProps = {

@@ -233,6 +233,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
  alphabetButton: {
+  width: '40%', // Добавлено
+  alignSelf: 'center', // Добавлено
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
