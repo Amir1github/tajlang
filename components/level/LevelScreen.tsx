@@ -138,6 +138,7 @@ export default function LevelScreen() {
             showInstructions={showInstructions}
             onStartInstructions={handleStartInstructions}
             onStartTest={startTest}
+            id = {levelData.id}
           />
         )}
 

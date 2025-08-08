@@ -387,6 +387,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   alphabetButton: {
+    width: '40%', // Добавлено
+  alignSelf: 'center', // Добавлено
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
