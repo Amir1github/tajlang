@@ -258,9 +258,9 @@ const styles = StyleSheet.create({
     }),
   },
   container: {
-    paddingBottom: 100,
+
     flex: 1,
-    padding: 16,
+    
     paddingBottom: 80, // Space for navigation bar
   },
   headerContainer: {

@@ -16,7 +16,10 @@ type Translations = {
 
 const translations: Translations = {
   en: {
-    home: 'Home',
+    preparation: 'Preparation',
+    proceedToReading: 'Proceed To Reading',
+    reading: 'Reading',
+    
     translatorTitle: 'Tajik Language Translator',
     warning: 'Warning: We are not responsible for the quality of this translation service. For best results, use full sentences.',
     inputLabel: 'Source text',
@@ -138,6 +141,9 @@ const translations: Translations = {
     error: 'An error occurred. Please try again.',
   },
   ru: {
+    preparation: 'Подготовка к тесту',
+    proceedToReading: 'Перейти к чтению',
+    reading: 'Чтение',
      chatTitle: 'Чат по таджикскому языку',
     
     placeholder: 'Задайте вопрос по таджикскому языку...',
