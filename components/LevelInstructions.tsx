@@ -42,45 +42,46 @@ export default function LevelInstructions({ onStart }: LevelInstructionsProps) {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
-    padding: 24,
-    margin: 16,
+    borderRadius: 12,
+    padding: 14,
+    margin: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
   },
   title: {
-    fontSize: 24,
+    fontSize: 19,
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: 14,
     textAlign: 'center',
   },
   section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
     marginBottom: 12,
   },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 7,
+  },
   text: {
-    fontSize: 16,
-    marginBottom: 8,
-    lineHeight: 24,
+    fontSize: 13,
+    marginBottom: 4,
+    lineHeight: 18,
   },
   startButton: {
-    padding: 16,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
   },
   startButtonText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

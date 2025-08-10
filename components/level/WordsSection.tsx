@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
 import WordCard from '@/components/WordCard';
@@ -29,8 +29,6 @@ export default function WordsSection({
   useEffect(() => {
     if (showInstructions) {
       setViewMode('instructions');
-    } else if (isLevelCompleted) {
-      setViewMode('completed');
     } else {
       setViewMode('words');
     }
@@ -42,11 +40,10 @@ export default function WordsSection({
     setContentError('');
 
     try {
- 
       const prefix = 'eq.'; 
-
-  const cleanId = id.startsWith(prefix) ? id.slice(prefix.length) : id;
+      const cleanId = id.startsWith(prefix) ? id.slice(prefix.length) : id;
       console.log('Fetching reading content for ID:', cleanId);
+      
       const { data, error } = await supabase
         .from('reading')
         .select('content')
@@ -72,6 +69,7 @@ export default function WordsSection({
       setIsLoadingContent(false);
     }
   };
+
   // Функция перехода к чтению после изучения слов
   const handleProceedToReading = () => {
     fetchReadingContent();
@@ -84,60 +82,95 @@ export default function WordsSection({
     setContentError('');
   };
 
-  if (viewMode === 'instructions') {
-    return <LevelInstructions onStart={onStartInstructions} />;
-  }
+  // Функция возврата домой
+  const handleGoHome = () => {
+    router.push('/');
+  };
 
-  if (viewMode === 'completed') {
-    return <CompletedLevelCard />;
-  }
-
-  if (viewMode === 'reading') {
-    return (
-      <ReadingSection
-        content={readingContent}
-        isLoading={isLoadingContent}
-        error={contentError}
-        onBack={handleBackToWords}
-        onStartTest={onStartTest}
-      />
-    );
-  }
-
-  // Основной режим просмотра слов
   return (
     <View style={styles.container}>
-      {/* Список слов */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.wordsContainer}>
-          {words.map((word) => (
-            <WordCard
-              key={word.id}
-              tajik={word.tajik}
-              english={word.english}
-              explanation={word.explanation}
-              ru_explanation={word.ru_explanation}
-              russian={word.russian}
-              examples={word.examples}
-            />
-          ))}
-        </View>
-      </ScrollView>
+      {/* Верхняя полоса с заголовком и кнопкой домой - показывается всегда */}
+      <View style={[styles.topBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <Pressable
+          style={styles.homeBackButton}
+          onPress={() => router.push('/')}
+          hitSlop={20}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
+        </Pressable>
+        <Text style={[styles.topBarTitle, { color: colors.text }]}>
+          {t('preparation')}
+        </Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-      {/* Кнопка перехода к чтению */}
-      <Pressable
-        style={[styles.readingButton, { backgroundColor: colors.primary }]}
-        onPress={handleProceedToReading}
-        disabled={isLoadingContent}
-      >
-        {isLoadingContent ? (
-          <ActivityIndicator color="#ffffff" />
-        ) : (
-          <Text style={[styles.readingButtonText, { color: '#ffffff' }]}>
-            {t('proceedToReading')}
-          </Text>
-        )}
-      </Pressable>
+      {/* Контент в зависимости от режима */}
+      {viewMode === 'instructions' && (
+        <LevelInstructions onStart={onStartInstructions} />
+      )}
+
+      {viewMode === 'reading' && (
+        <ReadingSection
+          content={readingContent}
+          isLoading={isLoadingContent}
+          error={contentError}
+          onBack={handleBackToWords}
+          onStartTest={onStartTest}
+        />
+      )}
+
+      {viewMode === 'words' && (
+        <View style={styles.wordsContent}>
+          {/* Список слов */}
+          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <View style={styles.wordsContainer}>
+              {words.map((word) => (
+                <WordCard
+                  key={word.id}
+                  tajik={word.tajik}
+                  english={word.english}
+                  explanation={word.explanation}
+                  ru_explanation={word.ru_explanation}
+                  russian={word.russian}
+                  examples={word.examples}
+                />
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* Нижняя секция с кнопкой или сообщением о завершении */}
+          {isLevelCompleted ? (
+            <View style={[styles.completedSection, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+              <Text style={[styles.completedMessage, { color: colors.textSecondary }]}>
+                {t('levelAlreadyCompleted')}
+              </Text>
+              <Pressable
+                style={[styles.homeButton, { backgroundColor: colors.primary }]}
+                onPress={handleGoHome}
+              >
+                <Ionicons name="home" size={20} color="#ffffff" style={{ marginRight: 8 }} />
+                <Text style={[styles.homeButtonText, { color: '#ffffff' }]}>
+                  {t('goHome')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={[styles.readingButton, { backgroundColor: colors.primary }]}
+              onPress={handleProceedToReading}
+              disabled={isLoadingContent}
+            >
+              {isLoadingContent ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={[styles.readingButtonText, { color: '#ffffff' }]}>
+                  {t('proceedToReading')}
+                </Text>
+              )}
+            </Pressable>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -191,32 +224,35 @@ function ReadingSection({
     <View style={styles.readingContainer}>
       {/* Header с кнопкой назад */}
       <View style={[styles.readingHeader, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <Pressable
-          style={styles.backButton}
-          onPress={onBack}
-          hitSlop={20}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
-        </Pressable>
+        
         <Text style={[styles.readingTitle, { color: colors.text }]}>
           {t('reading')}
         </Text>
         <View style={{ width: 24 }} />
       </View>
 
-      {/* HTML контент */}
-      <WebView
-        source={{ html: generateHTML(content, colors) }}
-        style={styles.webview}
-        showsVerticalScrollIndicator={true}
-        nestedScrollEnabled={true}
-        startInLoadingState={true}
-        renderLoading={() => (
-          <View style={styles.webviewLoading}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        )}
-      />
+      {/* Контент чтения - адаптивно для платформы */}
+      {Platform.OS === 'web' ? (
+        <ScrollView style={styles.webContent}>
+          <div 
+            dangerouslySetInnerHTML={{ __html: generateHTML(content, colors) }}
+            style={{ padding: 20 }}
+          />
+        </ScrollView>
+      ) : (
+        <WebView
+          source={{ html: generateHTML(content, colors) }}
+          style={styles.webview}
+          showsVerticalScrollIndicator={true}
+          nestedScrollEnabled={true}
+          startInLoadingState={true}
+          renderLoading={() => (
+            <View style={styles.webviewLoading}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          )}
+        />
+      )}
 
       {/* Кнопка перехода к тесту */}
       <Pressable
@@ -225,32 +261,6 @@ function ReadingSection({
       >
         <Text style={[styles.startTestButtonText, { color: '#ffffff' }]}>
           {t('startTest')}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function CompletedLevelCard() {
-  const { t, colors } = useLanguage();
-
-  return (
-    <View style={[
-      styles.completedContainer,
-      {
-        backgroundColor: colors.card,
-        shadowColor: colors.shadow
-      }
-    ]}>
-      <Text style={[styles.completedText, { color: colors.success }]}>
-        {t('levelAlreadyCompleted')}
-      </Text>
-      <Pressable
-        style={[styles.returnButton, { backgroundColor: colors.primary }]}
-        onPress={() => router.back()}
-      >
-        <Text style={[styles.returnButtonText, { color: '#ffffff' }]}>
-          {t('goBack')}
         </Text>
       </Pressable>
     </View>
@@ -271,7 +281,7 @@ function generateHTML(content: string, colors: any): string {
             line-height: 1.6;
             color: ${colors.text};
             background-color: ${colors.background};
-            padding: 20px;
+            
             margin: 0;
             font-size: 16px;
           }
@@ -343,6 +353,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  wordsContent: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
   },
@@ -360,6 +373,45 @@ const styles = StyleSheet.create({
   },
   readingButtonText: {
     fontSize: 18,
+    fontWeight: '600',
+  },
+  // Новые стили для завершенного уровня
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  homeBackButton: {
+    padding: 4,
+    borderRadius: 8,
+  },
+  topBarTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  completedSection: {
+    padding: 20,
+    borderTopWidth: 1,
+    alignItems: 'center',
+  },
+  completedMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  homeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  homeButtonText: {
+    fontSize: 16,
     fontWeight: '600',
   },
   readingContainer: {
@@ -380,6 +432,10 @@ const styles = StyleSheet.create({
   readingTitle: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  // Стили для веб-контента
+  webContent: {
+    flex: 1,
   },
   webview: {
     flex: 1,
@@ -428,36 +484,6 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   retryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  completedContainer: {
-    padding: 24,
-    margin: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  completedText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 24,
-  },
-  returnButton: {
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 120,
-  },
-  returnButtonText: {
     fontSize: 16,
     fontWeight: '600',
   },
