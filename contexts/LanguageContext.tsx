@@ -16,6 +16,10 @@ type Translations = {
 
 const translations: Translations = {
   en: {
+    NewChat: 'New Chat', 
+    back: 'Back', 
+    listChats: 'Chat List', 
+    chats: 'Chats',
     preparation: 'Preparation',
     proceedToReading: 'Proceed To Reading',
     reading: 'Reading',
@@ -141,6 +145,10 @@ const translations: Translations = {
     error: 'An error occurred. Please try again.',
   },
   ru: {
+    NewChat: 'Новый чат', 
+    back: 'Назад', 
+    listChats: 'Список чатов', 
+    chats: 'Чаты',
     preparation: 'Подготовка к тесту',
     proceedToReading: 'Перейти к чтению',
     reading: 'Чтение',
