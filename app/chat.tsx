@@ -12,7 +12,8 @@ import {
   Alert,
   Animated,
   Modal,
-  Dimensions 
+  Dimensions,
+  StyleSheet 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -69,7 +70,40 @@ const AMEENA_MODES = {
   }
 };
 
-const { width } = Dimensions.get('window');
+// Responsive utilities
+const getResponsiveDimensions = () => {
+  const { width, height } = Dimensions.get('window');
+  const isTablet = width >= 768;
+  const isLandscape = width > height;
+  
+  return {
+    width,
+    height,
+    isTablet,
+    isLandscape,
+    // Responsive values
+    headerPadding: isTablet ? 24 : 16,
+    contentPadding: isTablet ? 20 : 16,
+    fontSize: {
+      large: isTablet ? 28 : 24,
+      medium: isTablet ? 18 : 16,
+      small: isTablet ? 16 : 14,
+      tiny: isTablet ? 14 : 12,
+    },
+    spacing: {
+      large: isTablet ? 24 : 16,
+      medium: isTablet ? 16 : 12,
+      small: isTablet ? 12 : 8,
+    },
+    borderRadius: {
+      large: isTablet ? 20 : 16,
+      medium: isTablet ? 16 : 12,
+      small: isTablet ? 12 : 8,
+    },
+    messageMaxWidth: isTablet ? '70%' : '80%',
+    chatListWidth: isTablet && isLandscape ? width * 0.4 : width,
+  };
+};
 
 export default function TajikChatPage() {
   const { t, colors, language } = useLanguage();
@@ -85,13 +119,31 @@ export default function TajikChatPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [chatToDelete, setChatToDelete] = useState(null);
   const [thinkingMessage, setThinkingMessage] = useState('');
+  const [dimensions, setDimensions] = useState(getResponsiveDimensions());
   const scrollViewRef = useRef(null);
   const router = useRouter();
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(-width)).current;
+  const slideAnim = useRef(new Animated.Value(-dimensions.width)).current;
   const toastAnim = useRef(new Animated.Value(0)).current;
+
+  // Handle orientation changes
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      const newDimensions = getResponsiveDimensions();
+      setDimensions(newDimensions);
+      
+      // Update slide animation value for new width
+      if (showChatList) {
+        slideAnim.setValue(0);
+      } else {
+        slideAnim.setValue(-newDimensions.width);
+      }
+    });
+
+    return () => subscription?.remove();
+  }, [showChatList]);
 
   // Load chats on component mount
   useEffect(() => {
@@ -196,7 +248,7 @@ export default function TajikChatPage() {
 
     // Animate slide out
     Animated.timing(slideAnim, {
-      toValue: -width,
+      toValue: -dimensions.width,
       duration: 300,
       useNativeDriver: true,
     }).start();
@@ -213,7 +265,7 @@ export default function TajikChatPage() {
 
       // Animate slide out
       Animated.timing(slideAnim, {
-        toValue: -width,
+        toValue: -dimensions.width,
         duration: 300,
         useNativeDriver: true,
       }).start();
@@ -376,7 +428,7 @@ export default function TajikChatPage() {
   };
 
   const toggleChatList = () => {
-    const toValue = showChatList ? -width : 0;
+    const toValue = showChatList ? -dimensions.chatListWidth : 0;
     setShowChatList(!showChatList);
     
     Animated.timing(slideAnim, {
@@ -397,18 +449,24 @@ export default function TajikChatPage() {
   const renderMessage = (msg, idx) => {
     if (msg.role === 'thinking') {
       return (
-        <View key={idx} style={{
+        <View key={idx} style={[styles.messageContainer, {
           alignSelf: 'flex-start',
           backgroundColor: colors.card,
-          borderRadius: 15,
-          padding: 12,
-          marginBottom: 8,
-          maxWidth: '80%',
+          borderRadius: dimensions.borderRadius.medium,
+          padding: dimensions.spacing.medium,
+          marginBottom: dimensions.spacing.small,
+          maxWidth: typeof dimensions.messageMaxWidth === 'string'
+            ? dimensions.width * (parseInt(dimensions.messageMaxWidth) / 100 || 0.8)
+            : dimensions.messageMaxWidth,
           borderWidth: 1,
           borderColor: colors.border,
           opacity: 0.7,
-        }}>
-          <Text style={{ fontSize: 16, color: colors.text, fontStyle: 'italic' }}>
+        }]}>
+          <Text style={[styles.messageText, { 
+            fontSize: dimensions.fontSize.medium, 
+            color: colors.text, 
+            fontStyle: 'italic' 
+          }]}>
             {msg.text}
           </Text>
         </View>
@@ -416,210 +474,248 @@ export default function TajikChatPage() {
     }
 
     return (
-      <View key={idx} style={{
+      <View key={idx} style={[styles.messageContainer, {
         alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
         backgroundColor: msg.role === 'user' ? colors.primary : colors.card,
-        borderRadius: 15,
-        padding: 12,
-        marginBottom: 8,
-        maxWidth: '80%',
+        borderRadius: dimensions.borderRadius.medium,
+        padding: dimensions.spacing.medium,
+        marginBottom: dimensions.spacing.small,
+        maxWidth: typeof dimensions.messageMaxWidth === 'string'
+          ? dimensions.width * (parseInt(dimensions.messageMaxWidth) / 100 || 0.8)
+          : dimensions.messageMaxWidth,
         borderWidth: msg.role === 'bot' ? 1 : 0,
         borderColor: colors.border,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-      }}>
+        ...styles.messageShadow,
+      }]}>
         {msg.role === 'bot' && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-            <Text style={{ fontSize: 16, marginRight: 4 }}>{msg.avatar}</Text>
-            <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: 'bold' }}>
+          <View style={[styles.botHeader, { marginBottom: dimensions.spacing.small / 2 }]}>
+            <Text style={{ fontSize: dimensions.fontSize.medium, marginRight: 4 }}>{msg.avatar}</Text>
+            <Text style={[styles.botName, { 
+              fontSize: dimensions.fontSize.tiny, 
+              color: colors.textSecondary 
+            }]}>
               {msg.aiName}
             </Text>
           </View>
         )}
-        <Text style={{ 
-          fontSize: 16, 
+        <Text style={[styles.messageText, { 
+          fontSize: dimensions.fontSize.medium, 
           color: msg.role === 'user' ? '#ffffff' : colors.text,
-          lineHeight: 22,
-        }}>
+          lineHeight: dimensions.fontSize.medium * 1.4,
+        }]}>
           {msg.text}
         </Text>
       </View>
     );
   };
 
+  const renderAISelector = () => (
+    <View style={[styles.aiSelectorContainer, {
+      backgroundColor: colors.background,
+      borderRadius: dimensions.borderRadius.medium,
+      padding: dimensions.spacing.small / 2,
+      marginBottom: dimensions.spacing.medium,
+    }]}>
+      {Object.entries(AI_CONFIGS).map(([key, config]) => (
+        <TouchableOpacity
+          key={key}
+          style={[styles.aiSelectorButton, {
+            flex: 1,
+            backgroundColor: selectedAI === key ? config.color : 'transparent',
+            padding: dimensions.spacing.medium,
+            borderRadius: dimensions.borderRadius.small,
+            marginHorizontal: 2,
+          }]}
+          onPress={() => setSelectedAI(key)}
+        >
+          <View style={styles.aiSelectorContent}>
+            <Text style={{ fontSize: dimensions.fontSize.large, marginBottom: 4 }}>{config.avatar}</Text>
+            <Text style={[styles.aiSelectorText, { 
+              color: selectedAI === key ? '#ffffff' : colors.text,
+              fontWeight: selectedAI === key ? 'bold' : 'normal',
+              fontSize: dimensions.fontSize.small,
+            }]}>
+              {config.name}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderModeSelector = () => {
+    if (selectedAI !== 'ameena') return null;
+
+    const modesPerRow = dimensions.isTablet ? 3 : 2;
+    const modeEntries = Object.entries(AMEENA_MODES);
+    const rows = [];
+    
+    for (let i = 0; i < modeEntries.length; i += modesPerRow) {
+      rows.push(modeEntries.slice(i, i + modesPerRow));
+    }
+
+    return (
+      <View style={[styles.modeSelectorContainer, {
+        backgroundColor: colors.background,
+        borderRadius: dimensions.borderRadius.medium,
+        padding: dimensions.spacing.small,
+      }]}>
+        <Text style={[styles.modeSelectorTitle, { 
+          fontSize: dimensions.fontSize.small, 
+          color: colors.text, 
+          marginBottom: dimensions.spacing.small,
+        }]}>
+          Выберите режим работы
+        </Text>
+        {rows.map((row, rowIndex) => (
+          <View key={rowIndex} style={[styles.modeRow, { 
+            marginBottom: rowIndex < rows.length - 1 ? dimensions.spacing.small : 0 
+          }]}>
+            {row.map(([key, mode]) => (
+              <TouchableOpacity
+                key={key}
+                style={[styles.modeButton, {
+                  flex: 1,
+                  backgroundColor: selectedMode === key ? AI_CONFIGS.ameena.color : colors.card,
+                  paddingHorizontal: dimensions.spacing.medium,
+                  paddingVertical: dimensions.spacing.small,
+                  borderRadius: dimensions.borderRadius.small,
+                  borderWidth: 1,
+                  borderColor: selectedMode === key ? AI_CONFIGS.ameena.color : colors.border,
+                  marginHorizontal: dimensions.spacing.small / 2,
+                }]}
+                onPress={() => handleModeChange(key)}
+              >
+                <Text style={[styles.modeButtonText, { 
+                  color: selectedMode === key ? '#ffffff' : colors.text,
+                  fontSize: dimensions.fontSize.tiny,
+                  fontWeight: selectedMode === key ? 'bold' : 'normal'
+                }]}>
+                  {mode.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            {row.length < modesPerRow && (
+              <View style={{ flex: modesPerRow - row.length }} />
+            )}
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   return (
-    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1, padding: 16, backgroundColor: colors.background }}
+        style={[styles.keyboardView, { 
+          padding: dimensions.contentPadding, 
+          backgroundColor: colors.background 
+        }]}
       >
         {/* Header */}
-        <View style={{ 
+        <View style={[styles.header, { 
           backgroundColor: colors.card, 
-          padding: 20, 
-          borderRadius: 16,
-          marginBottom: 16,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
-        }}>
-          <View style={{ 
-            flexDirection: 'row', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: 16
-          }}>
-            <View>
-              <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.text }}>
+          padding: dimensions.headerPadding, 
+          borderRadius: dimensions.borderRadius.large,
+          marginBottom: dimensions.spacing.medium,
+          ...styles.headerShadow,
+        }]}>
+          <View style={[styles.headerTop, { 
+            marginBottom: dimensions.spacing.medium,
+            flexDirection: dimensions.isTablet ? 'row' : 'column',
+          }]}>
+            <View style={[styles.headerInfo, { 
+              flex: dimensions.isTablet ? 1 : undefined,
+              marginBottom: dimensions.isTablet ? 0 : dimensions.spacing.medium,
+            }]}>
+              <Text style={[styles.headerTitle, { 
+                fontSize: dimensions.fontSize.large, 
+                color: colors.text 
+              }]}>
                 Tajik Language Chat
               </Text>
-              <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 4 }}>
+              <Text style={[styles.headerSubtitle, { 
+                fontSize: dimensions.fontSize.small, 
+                color: colors.textSecondary, 
+                marginTop: 4 
+              }]}>
                 {AI_CONFIGS[selectedAI].avatar} {AI_CONFIGS[selectedAI].name} {AI_CONFIGS[selectedAI].version} - {AI_CONFIGS[selectedAI].description}
               </Text>
             </View>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={[styles.headerButtons, { 
+              gap: dimensions.spacing.small,
+              flexDirection: 'row',
+              justifyContent: dimensions.isTablet ? 'flex-end' : 'center',
+            }]}>
               <TouchableOpacity
-                style={{
+                style={[styles.headerButton, styles.primaryButton, {
                   backgroundColor: colors.primary,
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                }}
+                  paddingHorizontal: dimensions.spacing.medium,
+                  paddingVertical: dimensions.spacing.small,
+                  borderRadius: dimensions.borderRadius.small,
+                }]}
                 onPress={toggleChatList}
               >
-                <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>{t('chats') || 'Чаты'}</Text>
+                <Text style={[styles.buttonText, { 
+                  color: '#ffffff', 
+                  fontSize: dimensions.fontSize.small 
+                }]}>
+                  {t('chats') || 'Чаты'}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{
+                style={[styles.headerButton, styles.secondaryButton, {
                   backgroundColor: colors.border,
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                }}
+                  paddingHorizontal: dimensions.spacing.medium,
+                  paddingVertical: dimensions.spacing.small,
+                  borderRadius: dimensions.borderRadius.small,
+                }]}
                 onPress={() => router.push('/')}
               >
-                <Text style={{ color: colors.text }}>{t('home') || 'Домой'}</Text>
+                <Text style={[styles.buttonText, { 
+                  color: colors.text, 
+                  fontSize: dimensions.fontSize.small 
+                }]}>
+                  {t('home') || 'Домой'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* AI Selection */}
-          <View style={{ 
-            flexDirection: 'row', 
-            marginBottom: 16,
-            backgroundColor: colors.background,
-            borderRadius: 12,
-            padding: 4,
-          }}>
-            {Object.entries(AI_CONFIGS).map(([key, config]) => (
-              <TouchableOpacity
-                key={key}
-                style={{
-                  flex: 1,
-                  backgroundColor: selectedAI === key ? config.color : 'transparent',
-                  padding: 12,
-                  borderRadius: 8,
-                  marginHorizontal: 2,
-                }}
-                onPress={() => setSelectedAI(key)}
-              >
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: 20, marginBottom: 4 }}>{config.avatar}</Text>
-                  <Text style={{ 
-                    color: selectedAI === key ? '#ffffff' : colors.text,
-                    fontWeight: selectedAI === key ? 'bold' : 'normal',
-                    fontSize: 14,
-                  }}>
-                    {config.name}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {renderAISelector()}
 
           {/* Ameena Mode Selection */}
-          {selectedAI === 'ameena' && (
-            <View style={{ 
-              backgroundColor: colors.background,
-              borderRadius: 12,
-              padding: 8,
-            }}>
-              <Text style={{ 
-                fontSize: 14, 
-                fontWeight: 'bold', 
-                color: colors.text, 
-                marginBottom: 8,
-                textAlign: 'center' 
-              }}>
-                Выберите режим работы
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
-                {Object.entries(AMEENA_MODES).map(([key, mode]) => (
-                  <TouchableOpacity
-                    key={key}
-                    style={{
-                      backgroundColor: selectedMode === key ? AI_CONFIGS.ameena.color : colors.card,
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: selectedMode === key ? AI_CONFIGS.ameena.color : colors.border,
-                      minWidth: 80,
-                    }}
-                    onPress={() => handleModeChange(key)}
-                  >
-                    <Text style={{ 
-                      color: selectedMode === key ? '#ffffff' : colors.text,
-                      fontSize: 12,
-                      textAlign: 'center',
-                      fontWeight: selectedMode === key ? 'bold' : 'normal'
-                    }}>
-                      {mode.title}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
+          {renderModeSelector()}
         </View>
 
         {/* Messages */}
         <ScrollView
           ref={scrollViewRef}
-          style={{ flex: 1, marginBottom: 16 }}
-          contentContainerStyle={{ paddingBottom: 16 }}
+          style={[styles.messagesContainer, { flex: 1, marginBottom: dimensions.spacing.medium }]}
+          contentContainerStyle={{ paddingBottom: dimensions.spacing.medium }}
           showsVerticalScrollIndicator={false}
         >
           {messages.map(renderMessage)}
         </ScrollView>
 
         {/* Input */}
-        <View style={{ 
-          flexDirection: 'row', 
-          alignItems: 'flex-end',
+        <View style={[styles.inputContainer, { 
           backgroundColor: colors.card,
-          borderRadius: 16,
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
-        }}>
+          borderRadius: dimensions.borderRadius.large,
+          paddingHorizontal: dimensions.spacing.medium,
+          paddingVertical: dimensions.spacing.small,
+          ...styles.inputShadow,
+        }]}>
           <TextInput
-            style={{
+            style={[styles.textInput, {
               flex: 1,
-              fontSize: 16,
+              fontSize: dimensions.fontSize.medium,
               color: colors.text,
-              maxHeight: 100,
-              paddingVertical: 8,
-            }}
+              maxHeight: dimensions.isTablet ? 150 : 100,
+              paddingVertical: dimensions.spacing.small,
+            }]}
             placeholder={t('placeholder') || 'Введите сообщение...'}
             placeholderTextColor={colors.textTertiary}
             value={input}
@@ -630,19 +726,24 @@ export default function TajikChatPage() {
             multiline
           />
           <TouchableOpacity
-            style={{
+            style={[styles.sendButton, {
               backgroundColor: loading ? colors.border : colors.primary,
-              borderRadius: 12,
-              padding: 12,
-              marginLeft: 8,
-            }}
+              borderRadius: dimensions.borderRadius.medium,
+              padding: dimensions.spacing.medium,
+              marginLeft: dimensions.spacing.small,
+            }]}
             onPress={askBot}
             disabled={loading || !input.trim()}
           >
             {loading ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>✈️</Text>
+              <Text style={[styles.sendButtonText, { 
+                color: '#ffffff', 
+                fontSize: dimensions.fontSize.medium 
+              }]}>
+                ✈️
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -650,103 +751,154 @@ export default function TajikChatPage() {
 
       {/* Chat List Overlay */}
       <Animated.View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+        style={[styles.chatListOverlay, {
           backgroundColor: colors.background,
+          width: dimensions.chatListWidth,
           transform: [{ translateX: slideAnim }],
           zIndex: showChatList ? 1000 : -1,
-        }}
+        }]}
       >
-        <View style={{ flex: 1, padding: 16, paddingTop: 60 }}>
-          <View style={{ 
-            flexDirection: 'row', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: 20,
+        <View style={[styles.chatListContainer, { 
+          flex: 1, 
+          padding: dimensions.contentPadding,
+          paddingTop: Platform.OS === 'ios' ? 60 : 40,
+        }]}>
+          <View style={[styles.chatListHeader, { 
             backgroundColor: colors.card,
-            padding: 16,
-            borderRadius: 12
-          }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text }}>
+            padding: dimensions.spacing.medium,
+            borderRadius: dimensions.borderRadius.medium,
+            marginBottom: dimensions.spacing.large,
+            flexDirection: dimensions.isTablet ? 'row' : 'column',
+            alignItems: dimensions.isTablet ? 'center' : 'stretch',
+          }]}>
+            <Text style={[styles.chatListTitle, { 
+              fontSize: dimensions.fontSize.large, 
+              color: colors.text,
+              marginBottom: dimensions.isTablet ? 0 : dimensions.spacing.medium,
+              flex: dimensions.isTablet ? 1 : undefined,
+            }]}>
               {t('listChats') || 'Список чатов'}
             </Text>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={[styles.chatListButtons, { 
+              flexDirection: 'row', 
+              gap: dimensions.spacing.small 
+            }]}>
               <TouchableOpacity
-                style={{
+                style={[styles.chatListButton, styles.primaryButton, {
                   backgroundColor: colors.primary,
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                }}
+                  paddingHorizontal: dimensions.spacing.medium,
+                  paddingVertical: dimensions.spacing.small,
+                  borderRadius: dimensions.borderRadius.small,
+                }]}
                 onPress={createNewChat}
               >
-                <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>+ Новый</Text>
+                <Text style={[styles.buttonText, { 
+                  color: '#ffffff', 
+                  fontSize: dimensions.fontSize.small 
+                }]}>
+                  + Новый
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{
+                style={[styles.chatListButton, styles.secondaryButton, {
                   backgroundColor: colors.border,
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                }}
+                  paddingHorizontal: dimensions.spacing.medium,
+                  paddingVertical: dimensions.spacing.small,
+                  borderRadius: dimensions.borderRadius.small,
+                }]}
                 onPress={toggleChatList}
               >
-                <Text style={{ color: colors.text }}>Назад</Text>
+                <Text style={[styles.buttonText, { 
+                  color: colors.text, 
+                  fontSize: dimensions.fontSize.small 
+                }]}>
+                  Назад
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
           
-          <ScrollView>
+          <ScrollView style={styles.chatList}>
             {chats.map((chat) => (
               <TouchableOpacity
                 key={chat.id}
-                style={{
+                style={[styles.chatItem, {
                   backgroundColor: colors.card,
-                  padding: 16,
-                  marginBottom: 12,
-                  borderRadius: 12,
+                  padding: dimensions.spacing.medium,
+                  marginBottom: dimensions.spacing.medium,
+                  borderRadius: dimensions.borderRadius.medium,
                   borderWidth: currentChatId === chat.id ? 2 : 1,
                   borderColor: currentChatId === chat.id ? colors.primary : colors.border,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 2,
-                  elevation: 2,
-                }}
+                  ...styles.chatItemShadow,
+                }]}
                 onPress={() => loadChat(chat.id)}
               >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>
+                <View style={[styles.chatItemContent, { 
+                  flexDirection: dimensions.isTablet ? 'row' : 'column',
+                  alignItems: dimensions.isTablet ? 'center' : 'stretch',
+                }]}>
+                  <View style={[styles.chatItemInfo, { 
+                    flex: 1,
+                    marginBottom: dimensions.isTablet ? 0 : dimensions.spacing.small,
+                  }]}>
+                    <Text style={[styles.chatItemTitle, { 
+                      fontSize: dimensions.fontSize.medium, 
+                      color: colors.text 
+                    }]}>
                       {chat.title}
                     </Text>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
+                    <Text style={[styles.chatItemSubtitle, { 
+                      fontSize: dimensions.fontSize.tiny, 
+                      color: colors.textSecondary, 
+                      marginTop: 4 
+                    }]}>
                       {AI_CONFIGS[chat.aiType || 'gemini'].avatar} {AI_CONFIGS[chat.aiType || 'gemini'].name}
                       {chat.aiType === 'ameena' ? ` (${AMEENA_MODES[chat.mode]?.title})` : ''}
                     </Text>
                     {chat.lastMessage && (
-                      <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 4 }} numberOfLines={2}>
+                      <Text style={[styles.chatItemMessage, { 
+                        fontSize: dimensions.fontSize.small, 
+                        color: colors.textSecondary, 
+                        marginTop: 4 
+                      }]} numberOfLines={2}>
                         {chat.lastMessage}
                       </Text>
                     )}
                   </View>
                   <TouchableOpacity
                     onPress={() => handleDeletePress(chat.id)}
-                    style={{ 
-                      padding: 8,
+                    style={[styles.deleteButton, { 
+                      padding: dimensions.spacing.small,
                       backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                      borderRadius: 8,
-                    }}
+                      borderRadius: dimensions.borderRadius.small,
+                      alignSelf: dimensions.isTablet ? 'center' : 'flex-end',
+                    }]}
                   >
-                    <Text style={{ color: 'red', fontSize: 16 }}>🗑️</Text>
+                    <Text style={[styles.deleteButtonText, { 
+                      fontSize: dimensions.fontSize.medium 
+                    }]}>
+                      🗑️
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             ))}
+            {chats.length === 0 && (
+              <View style={[styles.emptyChatList, {
+                backgroundColor: colors.card,
+                padding: dimensions.spacing.large,
+                borderRadius: dimensions.borderRadius.medium,
+                alignItems: 'center',
+              }]}>
+                <Text style={[styles.emptyChatText, { 
+                  fontSize: dimensions.fontSize.medium, 
+                  color: colors.textSecondary,
+                  textAlign: 'center',
+                }]}>
+                  Нет сохраненных чатов.{'\n'}Создайте новый чат для начала.
+                </Text>
+              </View>
+            )}
           </ScrollView>
         </View>
       </Animated.View>
@@ -758,78 +910,72 @@ export default function TajikChatPage() {
         animationType="fade"
         onRequestClose={() => setShowDeleteModal(false)}
       >
-        <View style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        }}>
-          <View style={{
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, {
             backgroundColor: colors.card,
-            borderRadius: 16,
-            padding: 24,
-            margin: 20,
-            width: width - 40,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 8,
-          }}>
-            <Text style={{ 
-              fontSize: 18, 
-              fontWeight: 'bold', 
+            borderRadius: dimensions.borderRadius.large,
+            padding: dimensions.spacing.large,
+            margin: dimensions.spacing.large,
+            maxWidth: dimensions.isTablet ? 400 : dimensions.width - (dimensions.spacing.large * 2),
+            width: '100%',
+            ...styles.modalShadow,
+          }]}>
+            <Text style={[styles.modalTitle, { 
+              fontSize: dimensions.fontSize.large, 
               color: colors.text,
               textAlign: 'center',
-              marginBottom: 16 
-            }}>
+              marginBottom: dimensions.spacing.medium,
+            }]}>
               Удалить чат
             </Text>
-            <Text style={{ 
-              fontSize: 16, 
+            <Text style={[styles.modalText, { 
+              fontSize: dimensions.fontSize.medium, 
               color: colors.textSecondary,
               textAlign: 'center',
-              marginBottom: 24,
-              lineHeight: 22
-            }}>
+              marginBottom: dimensions.spacing.large,
+              lineHeight: dimensions.fontSize.medium * 1.4,
+            }]}>
               Вы уверены, что хотите удалить этот чат? Это действие нельзя отменить.
             </Text>
-            <View style={{ 
-              flexDirection: 'row', 
-              justifyContent: 'space-between',
-              gap: 16 
-            }}>
+            <View style={[styles.modalButtons, { 
+              flexDirection: dimensions.isTablet ? 'row' : 'column',
+              gap: dimensions.spacing.medium,
+            }]}>
               <TouchableOpacity
-                style={{
-                  flex: 1,
+                style={[styles.modalButton, styles.cancelButton, {
+                  flex: dimensions.isTablet ? 1 : undefined,
                   backgroundColor: colors.border,
-                  paddingVertical: 12,
-                  borderRadius: 8,
-                }}
+                  paddingVertical: dimensions.spacing.medium,
+                  borderRadius: dimensions.borderRadius.small,
+                  minHeight: 44,
+                  justifyContent: 'center',
+                }]}
                 onPress={() => setShowDeleteModal(false)}
               >
-                <Text style={{ 
+                <Text style={[styles.modalButtonText, { 
                   color: colors.text, 
-                  fontWeight: 'bold',
-                  textAlign: 'center' 
-                }}>
+                  fontSize: dimensions.fontSize.medium,
+                  textAlign: 'center',
+                }]}>
                   Отмена
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{
-                  flex: 1,
+                style={[styles.modalButton, styles.deleteConfirmButton, {
+                  flex: dimensions.isTablet ? 1 : undefined,
                   backgroundColor: '#DC3545',
-                  paddingVertical: 12,
-                  borderRadius: 8,
-                }}
+                  paddingVertical: dimensions.spacing.medium,
+                  borderRadius: dimensions.borderRadius.small,
+                  minHeight: 44,
+                  justifyContent: 'center',
+                }]}
                 onPress={confirmDeleteChat}
               >
-                <Text style={{ 
+                <Text style={[styles.modalButtonText, { 
                   color: '#ffffff', 
-                  fontWeight: 'bold',
-                  textAlign: 'center' 
-                }}>
+                  fontSize: dimensions.fontSize.medium,
+                  textAlign: 'center',
+                }]}>
                   Удалить
                 </Text>
               </TouchableOpacity>
@@ -841,19 +987,15 @@ export default function TajikChatPage() {
       {/* Mode Change Toast */}
       {showModeToast && (
         <Animated.View
-          style={{
-            position: 'absolute',
-            bottom: 100,
-            right: 20,
+          style={[styles.toast, {
+            bottom: dimensions.isTablet ? 120 : 100,
+            right: dimensions.spacing.large,
             backgroundColor: AI_CONFIGS.ameena.color,
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderRadius: 12,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.3,
-            shadowRadius: 4,
-            elevation: 5,
+            paddingHorizontal: dimensions.spacing.medium,
+            paddingVertical: dimensions.spacing.medium,
+            borderRadius: dimensions.borderRadius.medium,
+            maxWidth: dimensions.width * 0.8,
+            ...styles.toastShadow,
             transform: [
               {
                 scale: toastAnim.interpolate({
@@ -863,15 +1005,22 @@ export default function TajikChatPage() {
               },
             ],
             opacity: toastAnim,
-          }}
+          }]}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, marginRight: 8 }}>✅</Text>
-            <View>
-              <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 14 }}>
+          <View style={styles.toastContent}>
+            <Text style={[styles.toastIcon, { fontSize: dimensions.fontSize.medium, marginRight: 8 }]}>✅</Text>
+            <View style={styles.toastText}>
+              <Text style={[styles.toastTitle, { 
+                color: '#ffffff', 
+                fontSize: dimensions.fontSize.small,
+              }]}>
                 Режим изменен
               </Text>
-              <Text style={{ color: '#ffffff', fontSize: 12, opacity: 0.9 }}>
+              <Text style={[styles.toastDescription, { 
+                color: '#ffffff', 
+                fontSize: dimensions.fontSize.tiny, 
+                opacity: 0.9 
+              }]}>
                 {AMEENA_MODES[selectedMode]?.title}: {AMEENA_MODES[selectedMode]?.description}
               </Text>
             </View>
@@ -881,3 +1030,270 @@ export default function TajikChatPage() {
     </Animated.View>
   );
 }
+
+// Responsive StyleSheet
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  header: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerTop: {
+    alignItems: 'center',
+  },
+  headerInfo: {
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontWeight: 'bold',
+  },
+  headerSubtitle: {
+    textAlign: 'center',
+  },
+  headerButtons: {
+    alignItems: 'center',
+  },
+  headerButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 36,
+    minWidth: 60,
+  },
+  primaryButton: {
+    // Primary button styles
+  },
+  secondaryButton: {
+    // Secondary button styles  
+  },
+  buttonText: {
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  aiSelectorContainer: {
+    flexDirection: 'row',
+  },
+  aiSelectorButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiSelectorContent: {
+    alignItems: 'center',
+  },
+  aiSelectorText: {
+    textAlign: 'center',
+  },
+  modeSelectorContainer: {
+    // Mode selector container styles
+  },
+  modeSelectorTitle: {
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modeRow: {
+    flexDirection: 'row',
+  },
+  modeButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 36,
+  },
+  modeButtonText: {
+    textAlign: 'center',
+  },
+  messagesContainer: {
+    // Messages container styles
+  },
+  messageContainer: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  messageShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  botHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  botName: {
+    fontWeight: 'bold',
+  },
+  messageText: {
+    // Message text styles
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  inputShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  textInput: {
+    // Text input styles
+  },
+  sendButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 44,
+    minHeight: 44,
+  },
+  sendButtonText: {
+    fontWeight: 'bold',
+  },
+  chatListOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  chatListContainer: {
+    // Chat list container styles
+  },
+  chatListHeader: {
+    alignItems: 'center',
+  },
+  chatListTitle: {
+    fontWeight: 'bold',
+  },
+  chatListButtons: {
+    alignItems: 'center',
+  },
+  chatListButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 36,
+  },
+  chatList: {
+    flex: 1,
+  },
+  chatItem: {
+    // Chat item styles
+  },
+  chatItemShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  chatItemContent: {
+    // Chat item content styles
+  },
+  chatItemInfo: {
+    // Chat item info styles
+  },
+  chatItemTitle: {
+    fontWeight: 'bold',
+  },
+  chatItemSubtitle: {
+    // Chat item subtitle styles
+  },
+  chatItemMessage: {
+    // Chat item message styles
+  },
+  deleteButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 36,
+    minHeight: 36,
+  },
+  deleteButtonText: {
+    // Delete button text styles
+  },
+  emptyChatList: {
+    // Empty chat list styles
+  },
+  emptyChatText: {
+    // Empty chat text styles
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    alignItems: 'center',
+  },
+  modalShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+  },
+  modalText: {
+    // Modal text styles
+  },
+  modalButtons: {
+    width: '100%',
+  },
+  modalButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    // Cancel button styles
+  },
+  deleteConfirmButton: {
+    // Delete confirm button styles
+  },
+  modalButtonText: {
+    fontWeight: 'bold',
+  },
+  toast: {
+    position: 'absolute',
+  },
+  toastShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  toastContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  toastIcon: {
+    // Toast icon styles
+  },
+  toastText: {
+    flex: 1,
+  },
+  toastTitle: {
+    fontWeight: 'bold',
+  },
+  toastDescription: {
+    // Toast description styles
+  },
+});
