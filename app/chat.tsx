@@ -70,38 +70,57 @@ const AMEENA_MODES = {
   }
 };
 
-// Responsive utilities
+// Send icon SVG component
+const SendIcon = ({ size = 16, color = "#ffffff" }) => (
+  <View style={{ width: size, height: size }}>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 512 512"
+      fill={color}
+    >
+      <path d="M511.716,9.802c-0.107-0.853-0.213-1.707-0.533-2.56c-0.107-0.32-0.213-0.747-0.32-1.067c-0.533-1.173-1.28-2.24-2.133-3.2c-0.96-0.853-2.027-1.6-3.2-2.133c-0.32-0.107-0.747-0.32-1.067-0.32c-0.853-0.213-1.707-0.427-2.56-0.427c-0.427,0-0.747,0-1.173,0c-0.96,0-2.027,0.213-2.987,0.533c-0.213,0.107-0.427,0.107-0.64,0.213h-0.107L6.436,213.962c-5.44,2.347-7.893,8.64-5.547,14.08c0.96,2.24,2.667,4.053,4.8,5.12l178.347,94.4l94.507,178.347c1.813,3.52,5.44,5.653,9.387,5.76h0.427c4.053-0.107,7.68-2.667,9.387-6.4L510.969,14.815v-0.107c0.107-0.213,0.107-0.427,0.213-0.64c0.32-0.96,0.533-1.92,0.533-2.987C511.716,10.655,511.822,10.228,511.716,9.802z M35.342,224.522l418.88-182.08l-264.107,264L35.342,224.522z M287.182,476.362l-81.92-154.773l264-264.107L287.182,476.362z"/>
+    </svg>
+  </View>
+);
+
+// Responsive utilities with optimized desktop sizing
 const getResponsiveDimensions = () => {
   const { width, height } = Dimensions.get('window');
   const isTablet = width >= 768;
+  const isDesktop = width >= 1200; // New desktop breakpoint
   const isLandscape = width > height;
   
   return {
     width,
     height,
     isTablet,
+    isDesktop,
     isLandscape,
-    // Responsive values
-    headerPadding: isTablet ? 24 : 16,
-    contentPadding: isTablet ? 20 : 16,
+    // Responsive values - much more compact on desktop
+    headerPadding: isDesktop ? 12 : isTablet ? 16 : 16,
+    contentPadding: isDesktop ? 16 : isTablet ? 20 : 16,
     fontSize: {
-      large: isTablet ? 28 : 24,
-      medium: isTablet ? 18 : 16,
-      small: isTablet ? 16 : 14,
-      tiny: isTablet ? 14 : 12,
+      large: isDesktop ? 20 : isTablet ? 24 : 20,
+      medium: isDesktop ? 14 : isTablet ? 16 : 14,
+      small: isDesktop ? 12 : isTablet ? 14 : 12,
+      tiny: isDesktop ? 11 : isTablet ? 12 : 11,
     },
     spacing: {
-      large: isTablet ? 24 : 16,
-      medium: isTablet ? 16 : 12,
-      small: isTablet ? 12 : 8,
+      large: isDesktop ? 12 : isTablet ? 16 : 12,
+      medium: isDesktop ? 8 : isTablet ? 12 : 8,
+      small: isDesktop ? 6 : isTablet ? 8 : 6,
     },
     borderRadius: {
-      large: isTablet ? 20 : 16,
-      medium: isTablet ? 16 : 12,
-      small: isTablet ? 12 : 8,
+      large: isDesktop ? 12 : isTablet ? 16 : 12,
+      medium: isDesktop ? 8 : isTablet ? 12 : 8,
+      small: isDesktop ? 6 : isTablet ? 8 : 6,
     },
-    messageMaxWidth: isTablet ? '70%' : '80%',
+    messageMaxWidth: isDesktop ? '65%' : isTablet ? '70%' : '80%',
     chatListWidth: isTablet && isLandscape ? width * 0.4 : width,
+    // Compact button heights for desktop
+    buttonHeight: isDesktop ? 32 : isTablet ? 36 : 36,
+    inputHeight: isDesktop ? 36 : isTablet ? 40 : 40,
   };
 };
 
@@ -489,7 +508,7 @@ export default function TajikChatPage() {
       }]}>
         {msg.role === 'bot' && (
           <View style={[styles.botHeader, { marginBottom: dimensions.spacing.small / 2 }]}>
-            <Text style={{ fontSize: dimensions.fontSize.medium, marginRight: 4 }}>{msg.avatar}</Text>
+            <Text style={{ fontSize: dimensions.fontSize.small, marginRight: 4 }}>{msg.avatar}</Text>
             <Text style={[styles.botName, { 
               fontSize: dimensions.fontSize.tiny, 
               color: colors.textSecondary 
@@ -501,7 +520,7 @@ export default function TajikChatPage() {
         <Text style={[styles.messageText, { 
           fontSize: dimensions.fontSize.medium, 
           color: msg.role === 'user' ? '#ffffff' : colors.text,
-          lineHeight: dimensions.fontSize.medium * 1.4,
+          lineHeight: dimensions.fontSize.medium * 1.3,
         }]}>
           {msg.text}
         </Text>
@@ -512,9 +531,10 @@ export default function TajikChatPage() {
   const renderAISelector = () => (
     <View style={[styles.aiSelectorContainer, {
       backgroundColor: colors.background,
-      borderRadius: dimensions.borderRadius.medium,
+      borderRadius: dimensions.borderRadius.small,
       padding: dimensions.spacing.small / 2,
       marginBottom: dimensions.spacing.medium,
+      height: dimensions.isDesktop ? 48 : dimensions.buttonHeight + 16,
     }]}>
       {Object.entries(AI_CONFIGS).map(([key, config]) => (
         <TouchableOpacity
@@ -522,18 +542,21 @@ export default function TajikChatPage() {
           style={[styles.aiSelectorButton, {
             flex: 1,
             backgroundColor: selectedAI === key ? config.color : 'transparent',
-            padding: dimensions.spacing.medium,
+            paddingVertical: dimensions.isDesktop ? 8 : dimensions.spacing.medium,
+            paddingHorizontal: dimensions.spacing.small,
             borderRadius: dimensions.borderRadius.small,
             marginHorizontal: 2,
+            height: dimensions.isDesktop ? 40 : dimensions.buttonHeight,
+            justifyContent: 'center',
           }]}
           onPress={() => setSelectedAI(key)}
         >
           <View style={styles.aiSelectorContent}>
-            <Text style={{ fontSize: dimensions.fontSize.large, marginBottom: 4 }}>{config.avatar}</Text>
+            <Text style={{ fontSize: dimensions.isDesktop ? 14 : dimensions.fontSize.medium, marginBottom: 2 }}>{config.avatar}</Text>
             <Text style={[styles.aiSelectorText, { 
               color: selectedAI === key ? '#ffffff' : colors.text,
               fontWeight: selectedAI === key ? 'bold' : 'normal',
-              fontSize: dimensions.fontSize.small,
+              fontSize: dimensions.fontSize.tiny,
             }]}>
               {config.name}
             </Text>
@@ -546,7 +569,7 @@ export default function TajikChatPage() {
   const renderModeSelector = () => {
     if (selectedAI !== 'ameena') return null;
 
-    const modesPerRow = dimensions.isTablet ? 3 : 2;
+    const modesPerRow = dimensions.isDesktop ? 5 : dimensions.isTablet ? 3 : 2;
     const modeEntries = Object.entries(AMEENA_MODES);
     const rows = [];
     
@@ -557,15 +580,17 @@ export default function TajikChatPage() {
     return (
       <View style={[styles.modeSelectorContainer, {
         backgroundColor: colors.background,
-        borderRadius: dimensions.borderRadius.medium,
+        borderRadius: dimensions.borderRadius.small,
         padding: dimensions.spacing.small,
+        marginBottom: dimensions.spacing.small,
       }]}>
         <Text style={[styles.modeSelectorTitle, { 
           fontSize: dimensions.fontSize.small, 
           color: colors.text, 
           marginBottom: dimensions.spacing.small,
+          textAlign: 'center',
         }]}>
-          Выберите режим работы
+          Режим работы
         </Text>
         {rows.map((row, rowIndex) => (
           <View key={rowIndex} style={[styles.modeRow, { 
@@ -577,12 +602,14 @@ export default function TajikChatPage() {
                 style={[styles.modeButton, {
                   flex: 1,
                   backgroundColor: selectedMode === key ? AI_CONFIGS.ameena.color : colors.card,
-                  paddingHorizontal: dimensions.spacing.medium,
-                  paddingVertical: dimensions.spacing.small,
+                  paddingHorizontal: dimensions.spacing.small,
+                  paddingVertical: dimensions.isDesktop ? 4 : dimensions.spacing.small,
                   borderRadius: dimensions.borderRadius.small,
                   borderWidth: 1,
                   borderColor: selectedMode === key ? AI_CONFIGS.ameena.color : colors.border,
                   marginHorizontal: dimensions.spacing.small / 2,
+                  height: dimensions.isDesktop ? 28 : 32,
+                  justifyContent: 'center',
                 }]}
                 onPress={() => handleModeChange(key)}
               >
@@ -617,7 +644,7 @@ export default function TajikChatPage() {
         <View style={[styles.header, { 
           backgroundColor: colors.card, 
           padding: dimensions.headerPadding, 
-          borderRadius: dimensions.borderRadius.large,
+          borderRadius: dimensions.borderRadius.medium,
           marginBottom: dimensions.spacing.medium,
           ...styles.headerShadow,
         }]}>
@@ -638,9 +665,9 @@ export default function TajikChatPage() {
               <Text style={[styles.headerSubtitle, { 
                 fontSize: dimensions.fontSize.small, 
                 color: colors.textSecondary, 
-                marginTop: 4 
+                marginTop: 2 
               }]}>
-                {AI_CONFIGS[selectedAI].avatar} {AI_CONFIGS[selectedAI].name} {AI_CONFIGS[selectedAI].version} - {AI_CONFIGS[selectedAI].description}
+                {AI_CONFIGS[selectedAI].avatar} {AI_CONFIGS[selectedAI].name} - {AI_CONFIGS[selectedAI].description}
               </Text>
             </View>
             <View style={[styles.headerButtons, { 
@@ -654,6 +681,8 @@ export default function TajikChatPage() {
                   paddingHorizontal: dimensions.spacing.medium,
                   paddingVertical: dimensions.spacing.small,
                   borderRadius: dimensions.borderRadius.small,
+                  height: dimensions.buttonHeight,
+                  justifyContent: 'center',
                 }]}
                 onPress={toggleChatList}
               >
@@ -670,6 +699,8 @@ export default function TajikChatPage() {
                   paddingHorizontal: dimensions.spacing.medium,
                   paddingVertical: dimensions.spacing.small,
                   borderRadius: dimensions.borderRadius.small,
+                  height: dimensions.buttonHeight,
+                  justifyContent: 'center',
                 }]}
                 onPress={() => router.push('/')}
               >
@@ -703,9 +734,10 @@ export default function TajikChatPage() {
         {/* Input */}
         <View style={[styles.inputContainer, { 
           backgroundColor: colors.card,
-          borderRadius: dimensions.borderRadius.large,
+          borderRadius: dimensions.borderRadius.medium,
           paddingHorizontal: dimensions.spacing.medium,
           paddingVertical: dimensions.spacing.small,
+          minHeight: dimensions.inputHeight,
           ...styles.inputShadow,
         }]}>
           <TextInput
@@ -713,7 +745,7 @@ export default function TajikChatPage() {
               flex: 1,
               fontSize: dimensions.fontSize.medium,
               color: colors.text,
-              maxHeight: dimensions.isTablet ? 150 : 100,
+              maxHeight: dimensions.isTablet ? 100 : 80,
               paddingVertical: dimensions.spacing.small,
             }]}
             placeholder={t('placeholder') || 'Введите сообщение...'}
@@ -728,9 +760,13 @@ export default function TajikChatPage() {
           <TouchableOpacity
             style={[styles.sendButton, {
               backgroundColor: loading ? colors.border : colors.primary,
-              borderRadius: dimensions.borderRadius.medium,
-              padding: dimensions.spacing.medium,
+              borderRadius: dimensions.borderRadius.small,
+              padding: dimensions.spacing.small,
               marginLeft: dimensions.spacing.small,
+              width: dimensions.isDesktop ? 32 : 36,
+              height: dimensions.isDesktop ? 32 : 36,
+              justifyContent: 'center',
+              alignItems: 'center',
             }]}
             onPress={askBot}
             disabled={loading || !input.trim()}
@@ -738,12 +774,7 @@ export default function TajikChatPage() {
             {loading ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <Text style={[styles.sendButtonText, { 
-                color: '#ffffff', 
-                fontSize: dimensions.fontSize.medium 
-              }]}>
-                ✈️
-              </Text>
+              <SendIcon size={dimensions.isDesktop ? 14 : 16} color="#ffffff" />
             )}
           </TouchableOpacity>
         </View>
@@ -789,6 +820,8 @@ export default function TajikChatPage() {
                   paddingHorizontal: dimensions.spacing.medium,
                   paddingVertical: dimensions.spacing.small,
                   borderRadius: dimensions.borderRadius.small,
+                  height: dimensions.buttonHeight,
+                  justifyContent: 'center',
                 }]}
                 onPress={createNewChat}
               >
@@ -805,6 +838,8 @@ export default function TajikChatPage() {
                   paddingHorizontal: dimensions.spacing.medium,
                   paddingVertical: dimensions.spacing.small,
                   borderRadius: dimensions.borderRadius.small,
+                  height: dimensions.buttonHeight,
+                  justifyContent: 'center',
                 }]}
                 onPress={toggleChatList}
               >
@@ -872,6 +907,10 @@ export default function TajikChatPage() {
                       backgroundColor: 'rgba(255, 0, 0, 0.1)',
                       borderRadius: dimensions.borderRadius.small,
                       alignSelf: dimensions.isTablet ? 'center' : 'flex-end',
+                      width: 32,
+                      height: 32,
+                      justifyContent: 'center',
+                      alignItems: 'center',
                     }]}
                   >
                     <Text style={[styles.deleteButtonText, { 
@@ -1031,7 +1070,7 @@ export default function TajikChatPage() {
   );
 }
 
-// Responsive StyleSheet
+// Responsive StyleSheet with optimized sizing
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1071,7 +1110,6 @@ const styles = StyleSheet.create({
   headerButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 36,
     minWidth: 60,
   },
   primaryButton: {
@@ -1102,7 +1140,6 @@ const styles = StyleSheet.create({
   },
   modeSelectorTitle: {
     fontWeight: 'bold',
-    textAlign: 'center',
   },
   modeRow: {
     flexDirection: 'row',
@@ -1110,7 +1147,6 @@ const styles = StyleSheet.create({
   modeButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 36,
   },
   modeButtonText: {
     textAlign: 'center',
@@ -1159,8 +1195,6 @@ const styles = StyleSheet.create({
   sendButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 44,
-    minHeight: 44,
   },
   sendButtonText: {
     fontWeight: 'bold',
@@ -1187,7 +1221,6 @@ const styles = StyleSheet.create({
   chatListButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 36,
   },
   chatList: {
     flex: 1,
@@ -1220,8 +1253,6 @@ const styles = StyleSheet.create({
   deleteButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 36,
-    minHeight: 36,
   },
   deleteButtonText: {
     // Delete button text styles
