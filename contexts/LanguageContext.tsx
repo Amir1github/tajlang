@@ -16,6 +16,10 @@ type Translations = {
 
 const translations: Translations = {
   en: {
+    exitTestMessage: 'Are you sure you want to exit. The progress will not be saved',
+    cancel: 'Cancel',
+    exitTestTitle: 'Exiting the test',
+    exit: 'Exit',
     NewChat: 'New Chat', 
     back: 'Back', 
     listChats: 'Chat List', 
@@ -118,7 +122,7 @@ const translations: Translations = {
     newPassword: 'New Password',
     changePassword: 'Change Password',
     changing: 'Changing password...',
-    cancel: 'Cancel',
+   
     passwordsDoNotMatch: 'Passwords do not match',
     errorLoadingData: 'Error loading data. Please try again.',
     retry: 'Retry',
@@ -145,6 +149,10 @@ const translations: Translations = {
     error: 'An error occurred. Please try again.',
   },
   ru: {
+    exitTestMessage: 'Вы уверены, что хотите выйти? Прогресс не будет сохранен',
+    cancel: 'Отмена',
+    exitTestTitle: 'Выход из теста',
+    exit: 'Выход',
     NewChat: 'Новый чат', 
     back: 'Назад', 
     listChats: 'Список чатов', 
@@ -250,7 +258,7 @@ const translations: Translations = {
     newPassword: 'Новый пароль',
     changePassword: 'Изменить пароль',
     changing: 'Изменение пароля...',
-    cancel: 'Отмена',
+  
     passwordsDoNotMatch: 'Пароли не совпадают',
     errorLoadingData: 'Ошибка загрузки данных. Пожалуйста, попробуйте снова.',
     retry: 'Повторить',
