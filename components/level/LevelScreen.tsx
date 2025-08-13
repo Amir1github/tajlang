@@ -102,15 +102,7 @@ export default function LevelScreen() {
 
   return (
     <>
-      <LevelHeader
-        title={levelData.title}
-        hasAttempted={hasAttempted}
-        hasPassed={hasPassed}
-        isLevelCompleted={isLevelCompleted}
-        showTest={showTest}
-        showResults={showResults}
-        onHomePress={handleHomePress}
-      />
+      
       
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
         {showResults ? (
@@ -123,6 +115,16 @@ export default function LevelScreen() {
             onReturnHome={handleReturnHome}
           />
         ) : showTest ? (
+          <div>
+            <LevelHeader
+              title={levelData.title}
+              hasAttempted={hasAttempted}
+              hasPassed={hasPassed}
+              isLevelCompleted={isLevelCompleted}
+              showTest={showTest}
+              showResults={showResults}
+              onHomePress={handleHomePress}
+            />
           <TestSection
             questions={randomizedQuestions}
             currentQuestion={currentQuestion}
@@ -131,6 +133,7 @@ export default function LevelScreen() {
             onPreviousQuestion={handlePreviousQuestion}
             updating={updating}
           />
+          </div>
         ) : (
           <WordsSection
             words={levelData.words}
