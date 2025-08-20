@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { LevelData } from '@/types/level';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function useLevelData(levelId: string | undefined, userId: string | undefined) {
   const [levelData, setLevelData] = useState<LevelData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLevelCompleted, setIsLevelCompleted] = useState(false);
+  const { language } = useLanguage();
 
   useEffect(() => {
     if (levelId && userId) {
       fetchLevelData();
       checkLevelCompletion();
     }
-  }, [levelId, userId]);
+  }, [levelId, userId, language]);
 
   async function fetchLevelData() {
     if (!levelId) return;
@@ -38,11 +40,32 @@ export function useLevelData(levelId: string | undefined, userId: string | undef
 
       if (wordsError) throw wordsError;
 
-      const { data: questions, error: questionsError } = await supabase
-        .from('questions')
+      // Выбор таблицы вопросов в зависимости от языка (fallback на questions)
+      const questionsTable = language === 'ru' ? 'ru_questions' : 'questions';
+      let questions = null as any[] | null;
+      let questionsError: any = null;
+
+      const primary = await supabase
+        .from(questionsTable)
         .select('id, question_text, correct_answer, options, type, hint, alternative_answers')
         .eq('level_id', levelId);
 
+      if (primary.error) {
+        questionsError = primary.error;
+      } else {
+        questions = primary.data as any[] | null;
+      }
+
+      if (questionsError && questionsTable !== 'questions') {
+        // Пробуем таблицу по умолчанию, если ru_questions отсутствует
+        const fallback = await supabase
+          .from('questions')
+          .select('id, question_text, correct_answer, options, type, hint, alternative_answers')
+          .eq('level_id', levelId);
+        if (fallback.error) throw fallback.error;
+        questions = fallback.data as any[] | null;
+        questionsError = null;
+      }
       if (questionsError) throw questionsError;
 
       const fullLevelData = {

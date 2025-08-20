@@ -1,7 +1,9 @@
+import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import FillInBlankQuestion from '@/components/FillInBlankQuestion';
 import type { TestSectionProps } from '@/types/level';
+import { validateAnswer } from '@/utils/testHelpers';
 
 export default function TestSection({
   questions,
@@ -51,14 +53,14 @@ export default function TestSection({
           hint={currentQ.hint}
           onAnswer={(isCorrect, answer) => onAnswer(isCorrect, answer)}
           disabled={updating}
-          showFeedback={false}
-          showRetryButton={false}
         />
       ) : (
         <MultipleChoiceQuestion
           question={currentQ.question_text}
           options={currentQ.options}
           correctAnswer={currentQ.correct_answer}
+          alternativeAnswers={currentQ.alternative_answers}
+          hint={currentQ.hint}
           onAnswer={onAnswer}
           disabled={updating}
         />
@@ -105,22 +107,47 @@ function MultipleChoiceQuestion({
   question,
   options,
   correctAnswer,
+  alternativeAnswers,
+  hint,
   onAnswer,
   disabled,
 }: {
   question: string;
   options: string[];
   correctAnswer: string;
+  alternativeAnswers?: string[];
+  hint?: string;
   onAnswer: (isCorrect: boolean, answer: string) => void;
   disabled: boolean;
 }) {
-  const { colors } = useLanguage();
+  const { t, colors } = useLanguage();
+  const [showHint, setShowHint] = React.useState(false);
 
   return (
     <>
       <Text style={[styles.questionText, { color: colors.text }]}>
         {question}
       </Text>
+      {!!hint && (
+        <Pressable
+          style={({ pressed }) => [
+            styles.hintToggle,
+            { backgroundColor: colors.secondary },
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={() => setShowHint(!showHint)}
+          disabled={disabled}
+        >
+          <Text style={[styles.hintToggleText, { color: colors.text }]}>
+            {showHint ? t('hideHint') : t('showHint')}
+          </Text>
+        </Pressable>
+      )}
+      {showHint && !!hint && (
+        <Text style={[styles.hintText, { color: colors.textSecondary }]}>
+          {hint}
+        </Text>
+      )}
       <View style={styles.optionsContainer}>
         {options.map((option, index) => (
           <Pressable
@@ -131,7 +158,14 @@ function MultipleChoiceQuestion({
               disabled && styles.optionButtonDisabled,
               pressed && styles.optionButtonPressed
             ]}
-            onPress={() => onAnswer(option === correctAnswer, option)}
+            onPress={() => {
+              const isCorrect = validateAnswer(
+                option,
+                correctAnswer,
+                alternativeAnswers
+              );
+              onAnswer(isCorrect, option);
+            }}
             disabled={disabled}
           >
             <Text style={[styles.optionText, { color: colors.text }]}>
@@ -208,6 +242,22 @@ const styles = StyleSheet.create({
   optionsContainer: {
     gap: 12,
     marginBottom: 20,
+  },
+  hintToggle: {
+    alignSelf: 'center',
+    marginBottom: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+  },
+  hintToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  hintText: {
+    textAlign: 'center',
+    marginBottom: 12,
+    fontStyle: 'italic',
   },
   optionButton: {
     padding: 16,
