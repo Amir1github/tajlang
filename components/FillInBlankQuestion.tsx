@@ -7,7 +7,7 @@ type FillInBlankQuestionProps = {
   correctAnswer: string;
   alternativeAnswers?: string[];
   hint?: string;
-  onAnswer: (isCorrect: boolean) => void;
+  onAnswer: (isCorrect: boolean, answer?: string) => void;
   disabled?: boolean;
   onNext?: () => void;
   isLastQuestion?: boolean;
@@ -56,7 +56,7 @@ export default function FillInBlankQuestion({
     setIsCorrect(correct);
     setSubmitted(true);
     setShowKeyboard(false);
-    onAnswer(correct);
+    onAnswer(correct, inputValue);
 
     if (isLastQuestion && correct && onNext) {
       setTimeout(() => onNext(), 1500);

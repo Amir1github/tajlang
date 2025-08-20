@@ -141,6 +141,8 @@ const translations: Translations = {
     lightMode: 'Light Mode',
     theme: 'Theme',
     enterDescription: 'Enter a short description about yourself...',
+    yourAnswer: 'Your Answer',
+    ok: 'OK',
     chatAssistant: 'Chat Assistant',
     chatTitle: 'Tajik Language Chat',
   
@@ -277,6 +279,8 @@ const translations: Translations = {
     lightMode: 'Светлая тема',
     theme: 'Тема',
     enterDescription: 'Введите краткое описание о себе...',
+    yourAnswer: 'Ваш ответ',
+    ok: 'ОК',
     chatAssistant: 'Чат-помощник',
     privacyPolicy: 'Политика конфиденциальности',
     ourTeam: 'Наша команда',
