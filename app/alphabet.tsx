@@ -8,8 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 type Letter = {
   letter: string;
   transcription: string;
-  examples: string[];     // Примеры на таджикском + русский
-  examples_en: string[];  // Перевод на английский
+  examples: string[];    
+  examples_en: string[];  
 };
 
 const TAJIK_ALPHABET: Letter[] = [
