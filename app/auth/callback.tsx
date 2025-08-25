@@ -35,6 +35,7 @@ export default function OAuthCallback() {
             console.log('[OAuthCallback] Сессия установлена для пользователя:', data.user.id);
             // useAuth автоматически обработает этого пользователя и перенаправит
             // Просто ждем
+            router.push('/');
             return;
           }
         }
