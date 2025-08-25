@@ -149,8 +149,10 @@ const translations: Translations = {
     placeholder: 'Ask a question about the Tajik language...',
     send: 'Send',
     error: 'An error occurred. Please try again.',
+    grammar: 'Grammar',
   },
   ru: {
+    grammar: 'Грамматика',
     exitTestMessage: 'Вы уверены, что хотите выйти? Прогресс не будет сохранен',
     cancel: 'Отмена',
     exitTestTitle: 'Выход из теста',

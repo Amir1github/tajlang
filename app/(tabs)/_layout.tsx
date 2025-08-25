@@ -3,7 +3,7 @@ import { Book, Trophy, User, CirclePlus as PlusCircle, MessageSquare, Languages 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated, Text } from 'react-native';
-
+import { FileText } from 'lucide-react-native';
 export default function TabLayout() {
   const { t, colors } = useLanguage();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -35,6 +35,10 @@ export default function TabLayout() {
 const handleChatAssistantPress = () => {
   setMenuVisible(false);
   router.push('/chat');
+};
+const handleGrammarPress = () => {
+  setMenuVisible(false);
+  router.push('/grammar');
 };
   return (
   <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -75,6 +79,7 @@ const handleChatAssistantPress = () => {
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
         }}
       />
+      
     </Tabs>
 
     {/* Кнопка действия (в правом нижнем углу над таб-баром) */}
@@ -105,6 +110,10 @@ const handleChatAssistantPress = () => {
             <MessageSquare size={20} color={colors.primary} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: colors.text }]}>{t('chatAssistant')}</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={handleGrammarPress}>
+  <FileText size={20} color={colors.primary} style={styles.menuIcon} />
+  <Text style={[styles.menuText, { color: colors.text }]}>{t('grammar')}</Text>
+</TouchableOpacity>
         </Animated.View>
       )}
     </View>
