@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, Pressable, Image, Platform } from 're
 import { Link, router } from 'expo-router';
 import {TouchableOpacity, Animated} from 'react-native';
 import { CirclePlus as PlusCircle, MessageSquare, Languages } from 'lucide-react-native';
-
+import { FileText } from 'lucide-react-native';
 import { Lock, CircleCheck, Book, Trophy, User } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { supabase, type Level, type UserProgress } from '@/lib/supabase';
@@ -79,6 +79,10 @@ export default function LearnScreen() {
       setLoading(false);
     }
   }
+  const handleGrammarPress = () => {
+    setMenuVisible(false);
+    router.push('/grammar');
+  };
 const getLevelDescription = (item: Level) => {
   if (language === 'ru' && item.ru_description) {
     return item.ru_description;
@@ -305,6 +309,10 @@ const getLevelDescription = (item: Level) => {
                   <MessageSquare size={20} color={colors.primary} style={styles.menuIcon} />
                   <Text style={[styles.menuText, { color: colors.text }]}>{t('chatAssistant')}</Text>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.menuItem} onPress={handleGrammarPress}>
+  <FileText size={20} color={colors.primary} style={styles.menuIcon} />
+  <Text style={[styles.menuText, { color: colors.text }]}>{t('grammar')}</Text>
+</TouchableOpacity>
               </Animated.View>
             )}
           </View>
