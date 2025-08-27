@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from 'expo-linear-gradient';
-
+import { Link, router } from 'expo-router';
 const { width } = Dimensions.get('window');
 
 export default function Grammar() {
@@ -99,7 +99,7 @@ export default function Grammar() {
       >
         <TouchableOpacity 
           style={styles.homeButton}
-          onPress={() => navigation.navigate("HomepageScreen")}
+          onPress={() => router.push('/')}
           activeOpacity={0.8}
         >
           <Text style={styles.homeButtonText}>🏠 Home</Text>
@@ -149,7 +149,7 @@ export default function Grammar() {
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             Ready to start your Tajik learning journey? Let's begin! 🌟
-          </Text>
+          </Text> 
         </View>
       </ScrollView>
 
