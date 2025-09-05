@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, FlatList, Image, Platform, Pressable } from 'react-native';
 import { Link, router } from 'expo-router';
-import { Crown, Award, Star, X } from 'lucide-react-native';
+import { Crown, Award, Star, X, Circle } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getUserStatus } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Modal, ScrollView } from 'react-native';
 
@@ -12,6 +12,8 @@ type LeaderboardUser = {
   description: string;
   avatar_url: string;
   xp_points: number;
+  status?: 'online' | 'offline';
+  last_seen?: string | null;
   best_streak: number;
   rank?: number;
 };
@@ -27,12 +29,39 @@ export default function LeaderboardScreen() {
   useEffect(() => {
     fetchLeaderboard();
   }, []);
+  useEffect(() => {
+    fetchLeaderboard();
+    
+    // Set up periodic status updates
+    const statusInterval = setInterval(() => {
+      updateUserStatuses();
+    }, 30000); // Update every 30 seconds
 
+    return () => clearInterval(statusInterval);
+  }, []);
+  async function updateUserStatuses(users = leaderboardData) {
+    try {
+      const updatedUsers = await Promise.all(
+        users.map(async (user) => {
+          const { status, lastSeen } = await getUserStatus(user.id);
+          return {
+            ...user,
+            status,
+            last_seen: lastSeen
+          };
+        })
+      );
+      
+      setLeaderboardData(updatedUsers);
+    } catch (error) {
+      console.error('Error updating user statuses:', error);
+    }
+  }
   async function fetchLeaderboard() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, description, avatar_url, xp_points, best_streak')
+        .select('id, username, description, avatar_url, xp_points, best_streak, status, last_seen')
         .order('xp_points', { ascending: false })
         .limit(100);
 
@@ -45,6 +74,7 @@ export default function LeaderboardScreen() {
       }));
       
       setLeaderboardData(rankedData);
+      await updateUserStatuses(rankedData);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
     } finally {
@@ -57,18 +87,23 @@ export default function LeaderboardScreen() {
       setLoadingUserDetails(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, description, avatar_url, xp_points, best_streak')
+        .select('id, username, description, avatar_url, xp_points, best_streak, status, last_seen')
         .eq('id', userId)
         .single();
 
       if (error) throw error;
+      // Get current status
+      const { status, lastSeen } = await getUserStatus(userId);
       
       // Find the user's rank from the current leaderboard data
       const userWithRank = leaderboardData.find(user => user.id === userId);
       const userDetails = {
         ...data,
+        status,
+        last_seen: lastSeen,
         rank: userWithRank?.rank || 0
       };
+      
       
       setSelectedUser(userDetails);
     } catch (error) {
@@ -79,7 +114,33 @@ export default function LeaderboardScreen() {
       setLoadingUserDetails(false);
     }
   }
+  const getStatusColor = (status: 'online' | 'offline') => {
+    return status === 'online' ? '#22c55e' : '#6b7280';
+  };
 
+  const getStatusText = (status: 'online' | 'offline', lastSeen?: string | null) => {
+    if (status === 'online') {
+      return t('online') || 'Online';
+    }
+    
+    if (lastSeen) {
+      const lastSeenDate = new Date(lastSeen);
+      const now = new Date();
+      const diffInMinutes = Math.floor((now.getTime() - lastSeenDate.getTime()) / (1000 * 60));
+      
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes}m ago`;
+      } else if (diffInMinutes < 1440) { // 24 hours
+        const hours = Math.floor(diffInMinutes / 60);
+        return `${hours}h ago`;
+      } else {
+        const days = Math.floor(diffInMinutes / 1440);
+        return `${days}d ago`;
+      }
+    }
+    
+    return t('offline') || 'Offline';
+  };
   const handleUserPress = async (user: LeaderboardUser) => {
     try {
       setModalVisible(true);
@@ -234,6 +295,12 @@ export default function LeaderboardScreen() {
                       source={{ uri: selectedUser.avatar_url || 'https://i.imgur.com/mCHMpLT.png' }}
                       style={styles.modalAvatar}
                     />
+                    <Circle 
+                      size={16} 
+                      color={getStatusColor(selectedUser.status || 'offline')} 
+                      fill={getStatusColor(selectedUser.status || 'offline')}
+                      style={styles.modalStatusIndicator}
+                    />
                   </View>
                   {/* Rank Badge */}
                   <View style={[styles.rankBadge, { backgroundColor: colors.secondary }]}>
@@ -252,7 +319,22 @@ export default function LeaderboardScreen() {
                       {selectedUser.username || 'Anonymous'}
                     </Text>
                   </View>
-
+                  <View style={styles.detailRow}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
+                      {t('language') === 'ru' ? 'Статус:' : 'Status:'}
+                    </Text>
+                    <View style={styles.statusDetailContainer}>
+                      <Circle 
+                        size={8} 
+                        color={getStatusColor(selectedUser.status || 'offline')} 
+                        fill={getStatusColor(selectedUser.status || 'offline')}
+                        style={styles.statusDot}
+                      />
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {getStatusText(selectedUser.status || 'offline', selectedUser.last_seen)}
+                      </Text>
+                    </View>
+                  </View>
                   {/* Description */}
                   <View style={styles.detailRow}>
                     <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
@@ -503,6 +585,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 20,
   },
+  statusDetailContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusDot: {
+    marginRight: 4,
+  },
   avatarContainer: {
     alignItems: 'center',
     marginTop: 8,
@@ -513,5 +603,28 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     borderWidth: 3,
     borderColor: '#e2e8f0',
+  },
+  statusIndicator: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    borderRadius: 8,
+  },
+  statusContainer: {
+    marginBottom: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  modalStatusIndicator: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    borderRadius: 10,
   },
 });
