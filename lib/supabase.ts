@@ -39,9 +39,125 @@ export type Profile = {
   current_streak: number;
   best_streak: number;
   last_completed_at: string | null;
+  status?: 'online' | 'offline';
+  last_seen?: string;
   created_at: string;
   updated_at: string;
 };
+
+export async function updateUserStatus(userId: string, status: 'online' | 'offline') {
+  try {
+    const updates: any = {
+      status,
+      updated_at: new Date().toISOString(),
+    };
+
+    // If going offline, update last_seen timestamp
+    if (status === 'offline') {
+      updates.last_seen = new Date().toISOString();
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    return { error: error as Error };
+  }
+}
+
+export async function getUserStatus(userId: string): Promise<{
+  status: 'online' | 'offline';
+  lastSeen?: string;
+  error: Error | null;
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('status, last_seen, updated_at')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+
+    // If no explicit status is set, determine based on last activity
+    let status: 'online' | 'offline' = data.status || 'offline';
+    
+    // If status is online but last update was more than 5 minutes ago, consider offline
+    if (status === 'online' && data.updated_at) {
+      const lastUpdate = new Date(data.updated_at);
+      const now = new Date();
+      const minutesAgo = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+      
+      if (minutesAgo > 5) {
+        status = 'offline';
+      }
+    }
+
+    return {
+      status,
+      lastSeen: data.last_seen,
+      error: null,
+    };
+  } catch (error) {
+    console.error('Error getting user status:', error);
+    return {
+      status: 'offline',
+      error: error as Error,
+    };
+  }
+}
+
+// Auto status management
+export function setupStatusTracking(userId: string) {
+  let statusInterval: NodeJS.Timeout;
+
+  const updateOnlineStatus = () => {
+    updateUserStatus(userId, 'online');
+  };
+
+  const startTracking = () => {
+    // Set initial online status
+    updateOnlineStatus();
+    
+    // Update status every 2 minutes to maintain online presence
+    statusInterval = setInterval(updateOnlineStatus, 2 * 60 * 1000);
+    
+    // Set offline when app goes to background/closes
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        updateUserStatus(userId, 'offline');
+      } else if (nextAppState === 'active') {
+        updateOnlineStatus();
+      }
+    };
+
+    // For React Native
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      // Web environment
+      window.addEventListener('beforeunload', () => {
+        updateUserStatus(userId, 'offline');
+      });
+      
+      window.addEventListener('focus', updateOnlineStatus);
+      window.addEventListener('blur', () => {
+        updateUserStatus(userId, 'offline');
+      });
+    }
+
+    return () => {
+      clearInterval(statusInterval);
+      updateUserStatus(userId, 'offline');
+    };
+  };
+
+  return { startTracking };
+}
+
 
 export type Level = {
   id: string;

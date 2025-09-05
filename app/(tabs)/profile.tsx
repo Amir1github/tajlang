@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, Image, Pressable, ScrollView, TextInput, Modal, Platform } from 'react-native';
-import { Settings, Award, Flame, LogOut, Lock, Moon, Sun } from 'lucide-react-native';
+import { Settings, Award, Flame, LogOut, Lock, Moon, Sun, Circle } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
-import { supabase, type Profile, type UserProgress, type Level } from '@/lib/supabase';
+import { supabase, type Profile, type UserProgress, type Level, getUserStatus, updateUserStatus, setupStatusTracking } from '@/lib/supabase';
 import { useLanguage, lightTheme, darkTheme } from '@/contexts/LanguageContext';
 import { router } from 'expo-router';
 
@@ -12,6 +12,8 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
   const [levels, setLevels] = useState<Record<string, Level>>({});
+  const [userStatus, setUserStatus] = useState<'online' | 'offline'>('offline');
+  const [lastSeen, setLastSeen] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [editingUsername, setEditingUsername] = useState('');
   const [editingDescription, setEditingDescription] = useState('');
@@ -23,8 +25,40 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (user) {
       loadData();
+      setupUserStatus();
     }
   }, [user]);
+  async function setupUserStatus() {
+    if (!user) return;
+
+    // Set up status tracking
+    const { startTracking } = setupStatusTracking(user.id);
+    const cleanup = startTracking();
+
+    // Get initial status
+    await fetchUserStatus();
+
+    // Set up periodic status checks
+    const statusInterval = setInterval(fetchUserStatus, 30000); // Check every 30 seconds
+
+    return () => {
+      cleanup();
+      clearInterval(statusInterval);
+    };
+  }
+  async function fetchUserStatus() {
+    if (!user) return;
+
+    try {
+      const { status, lastSeen, error } = await getUserStatus(user.id);
+      if (!error) {
+        setUserStatus(status);
+        setLastSeen(lastSeen || null);
+      }
+    } catch (error) {
+      console.error('Error fetching user status:', error);
+    }
+  }
 
   async function loadData() {
     try {
@@ -47,7 +81,7 @@ export default function ProfileScreen() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, description, avatar_url, xp_points, current_streak, best_streak, last_completed_at, created_at, updated_at')
+        .select('id, username, description, avatar_url, xp_points, current_streak, best_streak, last_completed_at, created_at, updated_at, status, last_seen')
         .eq('id', user.id)
         .single();
 
@@ -98,6 +132,9 @@ export default function ProfileScreen() {
   }
 
   const handleSignOut = async () => {
+    if (user) {
+      await updateUserStatus(user.id, 'offline');
+    }
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -209,6 +246,34 @@ export default function ProfileScreen() {
       setLoading(false);
     }
   };
+  
+  const getStatusColor = (status: 'online' | 'offline') => {
+    return status === 'online' ? '#22c55e' : '#6b7280';
+  };
+
+  const getStatusText = (status: 'online' | 'offline', lastSeen?: string | null) => {
+    if (status === 'online') {
+      return t('online');
+    }
+    
+    if (lastSeen) {
+      const lastSeenDate = new Date(lastSeen);
+      const now = new Date();
+      const diffInMinutes = Math.floor((now.getTime() - lastSeenDate.getTime()) / (1000 * 60));
+      
+      if (diffInMinutes < 60) {
+        return `${t('lastSeen')} ${diffInMinutes}${t('minutesAgo')}`;
+      } else if (diffInMinutes < 1440) { // 24 hours
+        const hours = Math.floor(diffInMinutes / 60);
+        return `${t('lastSeen')} ${hours}${t('hoursAgo')}`;
+      } else {
+        const days = Math.floor(diffInMinutes / 1440);
+        return `${t('lastSeen')} ${days}${t('daysAgo')}`;
+      }
+    }
+    
+    return t('offline');
+  };
 
   const completedLevels = userProgress.filter(progress => progress.completed).length;
 
@@ -307,6 +372,17 @@ export default function ProfileScreen() {
               placeholder={t('enterUsername')}
               placeholderTextColor={colors.textTertiary}
             />
+            <View style={styles.statusContainer}>
+              <Circle 
+                size={8} 
+                color={getStatusColor(userStatus)} 
+                fill={getStatusColor(userStatus)}
+                style={styles.statusDot}
+              />
+              <Text style={[styles.statusText, { color: colors.textSecondary }]}>
+                {getStatusText(userStatus, lastSeen)}
+              </Text>
+            </View>
             <TextInput
               style={[styles.descriptionInput, { color: colors.textSecondary, borderColor: colors.border }]}
               value={editingDescription}
@@ -709,6 +785,20 @@ subHeader: {
   marginTop: 20,
   paddingTop: 16,
   borderTopWidth: 1
+},
+statusContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginTop: 4,
+  marginBottom: 8,
+},
+statusDot: {
+  marginRight: 6,
+},
+statusText: {
+  fontSize: 14,
+  fontWeight: '500',
 },
 footerLink: {
   paddingHorizontal: 8,
