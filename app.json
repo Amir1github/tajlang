@@ -18,6 +18,13 @@
     "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
+    },
+    "router": {
+      "experimental": {
+        "web": {
+          "onlyHashRouting": true
+        }
+      }
     }
   }
 }

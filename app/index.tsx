@@ -1,10 +1,6 @@
-
 import { View, Text, StyleSheet, FlatList, Pressable, Image, Platform } from 'react-native';
 import { Link, router } from 'expo-router';
-import {TouchableOpacity, Animated} from 'react-native';
-import { CirclePlus as PlusCircle, MessageSquare, Languages } from 'lucide-react-native';
-import { FileText } from 'lucide-react-native';
-import { Lock, CircleCheck, Book, Trophy, User } from 'lucide-react-native';
+import { Lock, CircleCheck } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { supabase, type Level, type UserProgress } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,36 +12,6 @@ export default function LearnScreen() {
   const [levels, setLevels] = useState<Level[]>([]);
   const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  const [menuVisible, setMenuVisible] = useState(false);
-    const [animation] = useState(new Animated.Value(0));
-  
-    const toggleMenu = () => {
-      Animated.timing(animation, {
-        toValue: menuVisible ? 0 : 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-      setMenuVisible(!menuVisible);
-    };
-  
-    const translateY = animation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [10, -10],
-    });
-  
-    const opacity = animation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
-    });
-    const handleTranslatorPress = () => {
-    setMenuVisible(false);
-    router.push('/translator');
-  };
-  
-  const handleChatAssistantPress = () => {
-    setMenuVisible(false);
-    router.push('/chat');
-  };
 
   useEffect(() => {
     if (user) {
@@ -53,7 +19,8 @@ export default function LearnScreen() {
       fetchUserProgress();
     }
   }, [user]);
-   const getLevelTitle = (item: Level) => {
+
+  const getLevelTitle = (item: Level) => {
     const baseTitle = item.title;
     const translatedTitle = language === 'ru' ? item.ru_title : item.en_title;
     
@@ -79,16 +46,13 @@ export default function LearnScreen() {
       setLoading(false);
     }
   }
-  const handleGrammarPress = () => {
-    setMenuVisible(false);
-    router.push('/grammar');
+
+  const getLevelDescription = (item: Level) => {
+    if (language === 'ru' && item.ru_description) {
+      return item.ru_description;
+    }
+    return item.description;
   };
-const getLevelDescription = (item: Level) => {
-  if (language === 'ru' && item.ru_description) {
-    return item.ru_description;
-  }
-  return item.description;
-};
 
   async function fetchUserProgress() {
     if (!user) return;
@@ -152,8 +116,8 @@ const getLevelDescription = (item: Level) => {
             ) : null}
           </View>
           <Text style={[styles.levelDescription, { color: colors.textSecondary }]}>
-  {getLevelDescription(item)}
-</Text>
+            {getLevelDescription(item)}
+          </Text>
 
           <Text style={[
             styles.statusText,
@@ -197,29 +161,6 @@ const getLevelDescription = (item: Level) => {
           <Text style={[styles.header, { color: colors.text }]}>{t('learn')}</Text>
         </View>
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>{t('loading')}</Text>
-        <View style={[styles.navigationBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-          <Pressable 
-            style={styles.navButton} 
-            onPress={() => router.push('/')}
-          >
-            <Book size={24} color={colors.primary} />
-            <Text style={[styles.navButtonText, { color: colors.primary }]}>{t('learn')}</Text>
-          </Pressable>
-          <Pressable 
-            style={styles.navButton} 
-            onPress={() => router.push('/leaderboard')}
-          >
-            <Trophy size={24} color={colors.primary} />
-            <Text style={[styles.navButtonText, { color: colors.primary }]}>{t('leaderboard')}</Text>
-          </Pressable>
-          <Pressable 
-            style={styles.navButton} 
-            onPress={() => router.push('/profile')}
-          >
-            <User size={24} color={colors.primary} />
-            <Text style={[styles.navButtonText, { color: colors.primary }]}>{t('profile')}</Text>
-          </Pressable>
-        </View>
       </View>
     );
   }
@@ -234,6 +175,7 @@ const getLevelDescription = (item: Level) => {
         />
         <Text style={[styles.header, { color: colors.text }]}>{t('learn')}</Text>
       </View>
+      
       <FlatList
         data={levels}
         renderItem={renderLevel}
@@ -255,67 +197,9 @@ const getLevelDescription = (item: Level) => {
           </Pressable>
         }
         ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t('noLevels')}</Text>}
-        showsVerticalScrollIndicator={true}
+        showsVerticalScrollIndicator={Platform.OS !== 'web'}
         style={styles.scrollContainer}
       />
-      
-      <View style={[styles.navigationBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-        <Pressable 
-          style={styles.navButton} 
-          onPress={() => router.push('/')}
-        >
-          <Book size={24} color={colors.primary} />
-          <Text style={[styles.navButtonText, { color: colors.primary }]}>{t('learn')}</Text>
-        </Pressable>
-        <Pressable 
-          style={styles.navButton} 
-          onPress={() => router.push('/leaderboard')}
-        >
-          <Trophy size={24} color={colors.primary} />
-          <Text style={[styles.navButtonText, { color: colors.primary }]}>{t('leaderboard')}</Text>
-        </Pressable>
-        <Pressable 
-          style={styles.navButton} 
-          onPress={() => router.push('/profile')}
-        >
-          <User size={24} color={colors.primary} />
-          <Text style={[styles.navButtonText, { color: colors.primary }]}>{t('profile')}</Text>
-        </Pressable>
-      </View>
-      <View style={styles.fabContainer}>
-            <TouchableOpacity onPress={toggleMenu} style={[styles.fab, { backgroundColor: colors.primary }]}>
-              <PlusCircle size={28} color="#fff" fill={colors.primary} />
-            </TouchableOpacity>
-      
-            {menuVisible && (
-              <Animated.View 
-                style={[
-                  styles.dropdownMenu,
-                  { backgroundColor: colors.card, shadowColor: colors.shadow },
-                  {
-                    opacity,
-                    transform: [{ translateY }],
-                  }
-                ]}
-              >
-                <TouchableOpacity style={styles.menuItem} onPress={handleTranslatorPress}
-      >
-                  <Languages size={20} color={colors.primary} style={styles.menuIcon} />
-                  <Text style={[styles.menuText, { color: colors.text }]}>{t('translator')}</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.menuItem} onPress={handleChatAssistantPress}
-      >
-                  <MessageSquare size={20} color={colors.primary} style={styles.menuIcon} />
-                  <Text style={[styles.menuText, { color: colors.text }]}>{t('chatAssistant')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem} onPress={handleGrammarPress}>
-  <FileText size={20} color={colors.primary} style={styles.menuIcon} />
-  <Text style={[styles.menuText, { color: colors.text }]}>{t('grammar')}</Text>
-</TouchableOpacity>
-              </Animated.View>
-            )}
-          </View>
     </View>
   );
 }
@@ -329,10 +213,8 @@ const styles = StyleSheet.create({
     }),
   },
   container: {
-
     flex: 1,
-    
-    paddingBottom: 80, // Space for navigation bar
+    padding: 20,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -349,55 +231,19 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
   },
-  
+  levelsList: {
+    paddingBottom: 16,
+  },
   levelWrapper: {
     marginBottom: 16,
     alignItems: 'center',
-    width: '100%', // Добавляем ширину
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 80, // Над таб-баром
-    right: 20,
-    alignItems: 'flex-end',
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    marginBottom: 10,
-  },
-  dropdownMenu: {
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    minWidth: 180,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-  },
-  menuIcon: {
-    marginRight: 10,
-  },
-  menuText: {
-    fontSize: 16,
+    width: '100%',
   },
   levelCard: {
     borderRadius: 16,
     overflow: 'hidden',
     width: '100%',
-    maxWidth: 600, // Добавляем максимальную ширину для всех карточек
+    maxWidth: 600,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -474,30 +320,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 24,
   },
-  navigationBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    height: 60,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    justifyContent: 'space-around',
-  },
-  navButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  navButtonText: {
-    fontSize: 12,
-    marginTop: 4,
-  },
   alphabetButton: {
-    width: '40%', // Добавлено
-  alignSelf: 'center', // Добавлено
+    width: '40%',
+    alignSelf: 'center',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -529,6 +354,4 @@ const styles = StyleSheet.create({
   alphabetButtonSubtext: {
     fontSize: 14,
   },
-
-  
 });

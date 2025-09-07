@@ -33,5 +33,12 @@ export default {
     EXPO_PUBLIC_EMAILJS_TEMPLATE_ID: process.env.EXPO_PUBLIC_EMAILJS_TEMPLATE_ID,
     EXPO_PUBLIC_EMAILJS_PUBLIC_KEY: process.env.EXPO_PUBLIC_EMAILJS_PUBLIC_KEY
     
+  },
+  router: {
+    experimental: {
+      web: {
+        onlyHashRouting: true
+      }
+    }
   }
 };
