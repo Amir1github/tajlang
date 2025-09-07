@@ -557,16 +557,7 @@ const Translator = () => {
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.headerTop}>
-              <TouchableOpacity 
-                style={styles.homeBtn}
-                onPress={() => router.push('/')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.homeBtnText}>← {t('home')}</Text>
-              </TouchableOpacity>
-              <View style={{ width: 80 }} />
-            </View>
+            
             <Text style={styles.title}>{t('translatorTitle')}</Text>
             <Text style={styles.subtitle}>
               🌐 Многоязычный переводчик с поддержкой таджикского языка

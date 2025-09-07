@@ -139,13 +139,7 @@ export default function Grammar() {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.homeButton}
-          onPress={() => router.push('/')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.homeButtonText}>← Back</Text>
-        </TouchableOpacity>
+        
         <Text style={styles.headerTitle}>Grammar Lessons</Text>
         <View style={styles.headerSpacer} />
       </View>

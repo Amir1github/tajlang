@@ -2,14 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  TextInput, 
-  Button, 
   ScrollView, 
-  ActivityIndicator, 
   KeyboardAvoidingView, 
   Platform, 
   TouchableOpacity, 
-  Alert,
   Animated,
   Modal,
   Dimensions,
@@ -19,128 +15,32 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-const GOOGLE_GEMINI_API_URL = process.env.EXPO_PUBLIC_GOOGLE_GEMINI_API_URL;
-const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
-const AMEENA_API_URL = 'https://ameena.saidzoda.com/api/generate';
+// Components
+import { AISelector } from '@/components/chat_components/AISelector';
+import { ModeSelector } from '@/components/chat_components/ModeSelector';
+import { MessageItem } from '@/components/chat_components/MessageItem';
+import { ChatInput } from '@/components/chat_components/ChatInput';
 
-// AI Configuration
-const AI_CONFIGS = {
-  gemini: {
-    name: 'Gemini',
-    version: '1.5 Pro',
-    description: 'Google\'s advanced AI model',
-    avatar: '🤖',
-    color: '#4285F4'
-  },
-  ameena: {
-    name: 'Амина',
-    version: 'v3.0',
-    description: 'Ёвари ҳушманди пешрафта',
-    avatar: '🧠',
-    color: '#9C27B0'
-  }
-};
-
-// Ameena modes configuration
-const AMEENA_MODES = {
-  normal: {
-  title: 'Асоси',
-  description: 'Универсальный помощник для любых вопросов',
-  system_prompt: "Шумо ёвари универсалӣ ва дӯстонаи тоҷикӣ ҳастед. Вазифаи шумо кӯмак кардан дар саволҳои гуногун — аз оддӣ то мураккаб. Шумо бояд ба саволҳои корбар дар ҳамон забоне, ки савол дода шудааст, ҷавоб диҳед ва агар савол ба калимаҳо, ҷумлаҳо ё мафҳумҳои тоҷикӣ вобаста бошад, онҳоро бо забони фаҳмонидани корбар шарҳ диҳед."
-},
-
-  omuzish: {
-    title: 'Омузиш',
-    description: 'Режим обучения и объяснений',
-    system_prompt: "Шумо муаллими сабур ва донишманд ҳастед. Шумо метавонед мафҳумҳои мураккаби илмӣ, математикӣ ва техникиро ба забони содда ва фаҳмо шарҳ диҳед. Шумо бояд ба саволҳои корбар дар ҳамон забоне, ки корбар савол пурсидааст, посух диҳед ва мафҳумҳоро бо забони фаҳмонидани корбар тавзеҳ диҳед."
-  },
-  hulosa: {
-    title: 'Хулоса',
-    description: 'Резюмирование текстов',
-    system_prompt: "Шумо мутахассиси хулосабарории матнҳо ҳастед. Вазифаи шумо хондани матни дароз ва ба таври мухтасар, вале дақиқ баён кардани фикрҳои асосии он аст. Шумо бояд хулосаро дар ҳамон забоне, ки корбар дархост кардааст, пешниҳод кунед ва агар лозим бошад, калимаҳо ва мафҳумҳоро бо забони фаҳмонидани корбар тавзеҳ диҳед."
-  },
-  tarjuma: {
-    title: 'Тарчума',
-    description: 'Перевод между языками',
-    system_prompt: "Шумо тарҷумони адабии коршинос ҳастед. Шумо метавонед байни забонҳои тоҷикӣ, англисӣ, русӣ ва дигар забонҳо тарҷума кунед. Мақсади шумо на танҳо тарҷума, балки расонидани мазмун, эҳсосот ва зебоии матни аслӣ мебошад. Шумо бояд ба саволҳои корбар дар ҳамон забоне, ки корбар савол пурсидааст, посух диҳед ва тарҷумаи дархостшударо пешниҳод кунед."
-  },
-  navishtan: {
-    title: 'Навиштан',
-    description: 'Помощь в написании документов',
-    system_prompt: "Шумо ҳамчун ёвари касбии нависандагӣ амал мекунед. Шумо дар навиштани мактубҳои расмӣ, ариза, дархост ва дигар ҳуҷҷатҳо кӯмак мерасонед. Шумо бояд ба саволҳои корбар дар ҳамон забоне, ки корбар савол пурсидааст, посух диҳед ва агар лозим бошад, калимаҳо ва мафҳумҳоро бо забони фаҳмонидани корбар тавзеҳ диҳед."
-  }
-};
-
-// Send icon SVG component
-const SendIcon = ({ size = 16, color = "#ffffff" }) => (
-  <View style={{ width: size, height: size }}>
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 512 512"
-      fill={color}
-    >
-      <path d="M511.716,9.802c-0.107-0.853-0.213-1.707-0.533-2.56c-0.107-0.32-0.213-0.747-0.32-1.067c-0.533-1.173-1.28-2.24-2.133-3.2c-0.96-0.853-2.027-1.6-3.2-2.133c-0.32-0.107-0.747-0.32-1.067-0.32c-0.853-0.213-1.707-0.427-2.56-0.427c-0.427,0-0.747,0-1.173,0c-0.96,0-2.027,0.213-2.987,0.533c-0.213,0.107-0.427,0.107-0.64,0.213h-0.107L6.436,213.962c-5.44,2.347-7.893,8.64-5.547,14.08c0.96,2.24,2.667,4.053,4.8,5.12l178.347,94.4l94.507,178.347c1.813,3.52,5.44,5.653,9.387,5.76h0.427c4.053-0.107,7.68-2.667,9.387-6.4L510.969,14.815v-0.107c0.107-0.213,0.107-0.427,0.213-0.64c0.32-0.96,0.533-1.92,0.533-2.987C511.716,10.655,511.822,10.228,511.716,9.802z M35.342,224.522l418.88-182.08l-264.107,264L35.342,224.522z M287.182,476.362l-81.92-154.773l264-264.107L287.182,476.362z"/>
-    </svg>
-  </View>
-);
-
-// Responsive utilities with optimized desktop sizing
-const getResponsiveDimensions = () => {
-  const { width, height } = Dimensions.get('window');
-  const isTablet = width >= 768;
-  const isDesktop = width >= 1200; // New desktop breakpoint
-  const isLandscape = width > height;
-  
-  return {
-    width,
-    height,
-    isTablet,
-    isDesktop,
-    isLandscape,
-    // Responsive values - much more compact on desktop
-    headerPadding: isDesktop ? 12 : isTablet ? 16 : 16,
-    contentPadding: isDesktop ? 16 : isTablet ? 20 : 16,
-    fontSize: {
-      large: isDesktop ? 20 : isTablet ? 24 : 20,
-      medium: isDesktop ? 14 : isTablet ? 16 : 14,
-      small: isDesktop ? 12 : isTablet ? 14 : 12,
-      tiny: isDesktop ? 11 : isTablet ? 12 : 11,
-    },
-    spacing: {
-      large: isDesktop ? 12 : isTablet ? 16 : 12,
-      medium: isDesktop ? 8 : isTablet ? 12 : 8,
-      small: isDesktop ? 6 : isTablet ? 8 : 6,
-    },
-    borderRadius: {
-      large: isDesktop ? 12 : isTablet ? 16 : 12,
-      medium: isDesktop ? 8 : isTablet ? 12 : 8,
-      small: isDesktop ? 6 : isTablet ? 8 : 6,
-    },
-    messageMaxWidth: isDesktop ? '65%' : isTablet ? '70%' : '80%',
-    chatListWidth: isTablet && isLandscape ? width * 0.4 : width,
-    // Compact button heights for desktop
-    buttonHeight: isDesktop ? 32 : isTablet ? 36 : 36,
-    inputHeight: isDesktop ? 36 : isTablet ? 40 : 40,
-  };
-};
+// Types & Utils
+import { Message, Chat, ResponsiveDimensions } from '@/types/chat';
+import { getResponsiveDimensions } from '@/utils/responsive';
+import { AI_CONFIGS, AMEENA_MODES, GOOGLE_GEMINI_API_URL, GOOGLE_API_KEY, AMEENA_API_URL } from '@/utils/constants';
 
 export default function TajikChatPage() {
   const { t, colors, language } = useLanguage();
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedAI, setSelectedAI] = useState('gemini');
   const [selectedMode, setSelectedMode] = useState('normal');
-  const [chats, setChats] = useState([]);
-  const [currentChatId, setCurrentChatId] = useState(null);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [showChatList, setShowChatList] = useState(false);
   const [showModeToast, setShowModeToast] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [chatToDelete, setChatToDelete] = useState(null);
-  const [thinkingMessage, setThinkingMessage] = useState('');
-  const [dimensions, setDimensions] = useState(getResponsiveDimensions());
-  const scrollViewRef = useRef(null);
+  const [chatToDelete, setChatToDelete] = useState<string | null>(null);
+  const [dimensions, setDimensions] = useState<ResponsiveDimensions>(getResponsiveDimensions());
+  const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
 
   // Animation values
@@ -154,7 +54,6 @@ export default function TajikChatPage() {
       const newDimensions = getResponsiveDimensions();
       setDimensions(newDimensions);
       
-      // Update slide animation value for new width
       if (showChatList) {
         slideAnim.setValue(0);
       } else {
@@ -168,7 +67,6 @@ export default function TajikChatPage() {
   // Load chats on component mount
   useEffect(() => {
     loadChats();
-    // Fade in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 500,
@@ -202,6 +100,14 @@ export default function TajikChatPage() {
     }
   }, [showModeToast]);
 
+  useEffect(() => {
+    try {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    } catch (error) {
+      console.error('Error scrolling to end:', error);
+    }
+  }, [messages]);
+
   const loadChats = async () => {
     try {
       const savedChats = await AsyncStorage.getItem('tajik_chats');
@@ -209,7 +115,6 @@ export default function TajikChatPage() {
         const parsedChats = JSON.parse(savedChats);
         setChats(parsedChats);
         
-        // Load the most recent chat
         if (parsedChats.length > 0) {
           const recentChat = parsedChats[0];
           setCurrentChatId(recentChat.id);
@@ -249,7 +154,7 @@ export default function TajikChatPage() {
 
   const createNewChat = () => {
     const newChatId = Date.now().toString();
-    const newChat = {
+    const newChat: Chat = {
       id: newChatId,
       title: `Chat ${chats.length + 1}`,
       messages: [],
@@ -266,7 +171,6 @@ export default function TajikChatPage() {
     setMessages([]);
     setShowChatList(false);
 
-    // Animate slide out
     Animated.timing(slideAnim, {
       toValue: -dimensions.width,
       duration: 300,
@@ -274,7 +178,7 @@ export default function TajikChatPage() {
     }).start();
   };
 
-  const loadChat = (chatId) => {
+  const loadChat = (chatId: string) => {
     const chat = chats.find(c => c.id === chatId);
     if (chat) {
       setCurrentChatId(chatId);
@@ -283,7 +187,6 @@ export default function TajikChatPage() {
       setSelectedMode(chat.mode || 'normal');
       setShowChatList(false);
 
-      // Animate slide out
       Animated.timing(slideAnim, {
         toValue: -dimensions.width,
         duration: 300,
@@ -292,7 +195,7 @@ export default function TajikChatPage() {
     }
   };
 
-  const handleDeletePress = (chatId) => {
+  const handleDeletePress = (chatId: string) => {
     setChatToDelete(chatId);
     setShowDeleteModal(true);
   };
@@ -321,12 +224,12 @@ export default function TajikChatPage() {
     }
   };
 
-  const askGemini = async (userMessage) => {
-    const response = await fetch(GOOGLE_GEMINI_API_URL, {
+  const askGemini = async (userMessage: string): Promise<string> => {
+    const response = await fetch(GOOGLE_GEMINI_API_URL!, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-goog-api-key': GOOGLE_API_KEY,
+        'X-goog-api-key': GOOGLE_API_KEY!,
       },
       body: JSON.stringify({
         contents: [
@@ -351,13 +254,13 @@ export default function TajikChatPage() {
     const candidate = data?.candidates?.[0];
     
     if (candidate && candidate.content?.parts) {
-      return candidate.content.parts.map(part => part.text).join(' ');
+      return candidate.content.parts.map((part: any) => part.text).join(' ');
     }
     
     return 'Извините, не могу ответить.';
   };
 
-  const askAmeena = async (userMessage) => {
+  const askAmeena = async (userMessage: string): Promise<string> => {
     const response = await fetch(AMEENA_API_URL, {
       method: 'POST',
       headers: {
@@ -391,27 +294,25 @@ export default function TajikChatPage() {
   const askBot = async () => {
     if (!input.trim() || loading) return;
 
-    // Create new chat if none exists
     if (!currentChatId) {
       createNewChat();
     }
 
-    const newMessages = [...messages, { role: 'user', text: input }];
+    const newMessages = [...messages, { role: 'user' as const, text: input }];
     setMessages(newMessages);
     const userMessage = input;
     setInput('');
     setLoading(true);
 
-    // Set thinking message
     const aiConfig = AI_CONFIGS[selectedAI];
-    setThinkingMessage(`${aiConfig.avatar} ${aiConfig.name} думает над ответом...`);
-    
-    // Add thinking message temporarily
-    const thinkingMsg = { role: 'thinking', text: `${aiConfig.avatar} ${aiConfig.name} думает над ответом...` };
+    const thinkingMsg: Message = { 
+      role: 'thinking', 
+      text: `${aiConfig.avatar} ${aiConfig.name} думает над ответом...` 
+    };
     setMessages([...newMessages, thinkingMsg]);
 
     try {
-      let botReply;
+      let botReply: string;
       
       if (selectedAI === 'gemini') {
         botReply = await askGemini(userMessage);
@@ -419,7 +320,6 @@ export default function TajikChatPage() {
         botReply = await askAmeena(userMessage);
       }
 
-      // Remove thinking message and add real response
       setMessages([...newMessages, { 
         role: 'bot', 
         text: botReply.trim(),
@@ -438,11 +338,10 @@ export default function TajikChatPage() {
       }]);
     } finally {
       setLoading(false);
-      setThinkingMessage('');
     }
   };
 
-  const handleModeChange = (mode) => {
+  const handleModeChange = (mode: string) => {
     setSelectedMode(mode);
     setShowModeToast(true);
   };
@@ -456,180 +355,6 @@ export default function TajikChatPage() {
       duration: 300,
       useNativeDriver: true,
     }).start();
-  };
-
-  useEffect(() => {
-    try {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    } catch (error) {
-      console.error('Error scrolling to end:', error);
-    }
-  }, [messages]);
-
-  const renderMessage = (msg, idx) => {
-    if (msg.role === 'thinking') {
-      return (
-        <View key={idx} style={[styles.messageContainer, {
-          alignSelf: 'flex-start',
-          backgroundColor: colors.card,
-          borderRadius: dimensions.borderRadius.medium,
-          padding: dimensions.spacing.medium,
-          marginBottom: dimensions.spacing.small,
-          maxWidth: typeof dimensions.messageMaxWidth === 'string'
-            ? dimensions.width * (parseInt(dimensions.messageMaxWidth) / 100 || 0.8)
-            : dimensions.messageMaxWidth,
-          borderWidth: 1,
-          borderColor: colors.border,
-          opacity: 0.7,
-        }]}>
-          <Text style={[styles.messageText, { 
-            fontSize: dimensions.fontSize.medium, 
-            color: colors.text, 
-            fontStyle: 'italic' 
-          }]}>
-            {msg.text}
-          </Text>
-        </View>
-      );
-    }
-
-    return (
-      <View key={idx} style={[styles.messageContainer, {
-        alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-        backgroundColor: msg.role === 'user' ? colors.primary : colors.card,
-        borderRadius: dimensions.borderRadius.medium,
-        padding: dimensions.spacing.medium,
-        marginBottom: dimensions.spacing.small,
-        maxWidth: typeof dimensions.messageMaxWidth === 'string'
-          ? dimensions.width * (parseInt(dimensions.messageMaxWidth) / 100 || 0.8)
-          : dimensions.messageMaxWidth,
-        borderWidth: msg.role === 'bot' ? 1 : 0,
-        borderColor: colors.border,
-        ...styles.messageShadow,
-      }]}>
-        {msg.role === 'bot' && (
-          <View style={[styles.botHeader, { marginBottom: dimensions.spacing.small / 2 }]}>
-            <Text style={{ fontSize: dimensions.fontSize.small, marginRight: 4 }}>{msg.avatar}</Text>
-            <Text style={[styles.botName, { 
-              fontSize: dimensions.fontSize.tiny, 
-              color: colors.textSecondary 
-            }]}>
-              {msg.aiName}
-            </Text>
-          </View>
-        )}
-        <Text style={[styles.messageText, { 
-          fontSize: dimensions.fontSize.medium, 
-          color: msg.role === 'user' ? '#ffffff' : colors.text,
-          lineHeight: dimensions.fontSize.medium * 1.3,
-        }]}>
-          {msg.text}
-        </Text>
-      </View>
-    );
-  };
-
-  const renderAISelector = () => (
-    <View style={[styles.aiSelectorContainer, {
-      backgroundColor: colors.background,
-      borderRadius: dimensions.borderRadius.small,
-      padding: dimensions.spacing.small / 2,
-      marginBottom: dimensions.spacing.medium,
-      height: dimensions.isDesktop ? 48 : dimensions.buttonHeight + 16,
-    }]}>
-      {Object.entries(AI_CONFIGS).map(([key, config]) => (
-        <TouchableOpacity
-          key={key}
-          style={[styles.aiSelectorButton, {
-            flex: 1,
-            backgroundColor: selectedAI === key ? config.color : 'transparent',
-            paddingVertical: dimensions.isDesktop ? 8 : dimensions.spacing.medium,
-            paddingHorizontal: dimensions.spacing.small,
-            borderRadius: dimensions.borderRadius.small,
-            marginHorizontal: 2,
-            height: dimensions.isDesktop ? 40 : dimensions.buttonHeight,
-            justifyContent: 'center',
-          }]}
-          onPress={() => setSelectedAI(key)}
-        >
-          <View style={styles.aiSelectorContent}>
-            <Text style={{ fontSize: dimensions.isDesktop ? 14 : dimensions.fontSize.medium, marginBottom: 2 }}>{config.avatar}</Text>
-            <Text style={[styles.aiSelectorText, { 
-              color: selectedAI === key ? '#ffffff' : colors.text,
-              fontWeight: selectedAI === key ? 'bold' : 'normal',
-              fontSize: dimensions.fontSize.tiny,
-            }]}>
-              {config.name}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-
-  const renderModeSelector = () => {
-    if (selectedAI !== 'ameena') return null;
-
-    const modesPerRow = dimensions.isDesktop ? 5 : dimensions.isTablet ? 3 : 2;
-    const modeEntries = Object.entries(AMEENA_MODES);
-    const rows = [];
-    
-    for (let i = 0; i < modeEntries.length; i += modesPerRow) {
-      rows.push(modeEntries.slice(i, i + modesPerRow));
-    }
-
-    return (
-      <View style={[styles.modeSelectorContainer, {
-        backgroundColor: colors.background,
-        borderRadius: dimensions.borderRadius.small,
-        padding: dimensions.spacing.small,
-        marginBottom: dimensions.spacing.small,
-      }]}>
-        <Text style={[styles.modeSelectorTitle, { 
-          fontSize: dimensions.fontSize.small, 
-          color: colors.text, 
-          marginBottom: dimensions.spacing.small,
-          textAlign: 'center',
-        }]}>
-          Режим работы
-        </Text>
-        {rows.map((row, rowIndex) => (
-          <View key={rowIndex} style={[styles.modeRow, { 
-            marginBottom: rowIndex < rows.length - 1 ? dimensions.spacing.small : 0 
-          }]}>
-            {row.map(([key, mode]) => (
-              <TouchableOpacity
-                key={key}
-                style={[styles.modeButton, {
-                  flex: 1,
-                  backgroundColor: selectedMode === key ? AI_CONFIGS.ameena.color : colors.card,
-                  paddingHorizontal: dimensions.spacing.small,
-                  paddingVertical: dimensions.isDesktop ? 4 : dimensions.spacing.small,
-                  borderRadius: dimensions.borderRadius.small,
-                  borderWidth: 1,
-                  borderColor: selectedMode === key ? AI_CONFIGS.ameena.color : colors.border,
-                  marginHorizontal: dimensions.spacing.small / 2,
-                  height: dimensions.isDesktop ? 28 : 32,
-                  justifyContent: 'center',
-                }]}
-                onPress={() => handleModeChange(key)}
-              >
-                <Text style={[styles.modeButtonText, { 
-                  color: selectedMode === key ? '#ffffff' : colors.text,
-                  fontSize: dimensions.fontSize.tiny,
-                  fontWeight: selectedMode === key ? 'bold' : 'normal'
-                }]}>
-                  {mode.title}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            {row.length < modesPerRow && (
-              <View style={{ flex: modesPerRow - row.length }} />
-            )}
-          </View>
-        ))}
-      </View>
-    );
   };
 
   return (
@@ -647,26 +372,33 @@ export default function TajikChatPage() {
           padding: dimensions.headerPadding, 
           borderRadius: dimensions.borderRadius.medium,
           marginBottom: dimensions.spacing.medium,
+          maxWidth: dimensions.isDesktop ? 1000 : undefined,
+          alignSelf: 'center',
+          width: '100%',
           ...styles.headerShadow,
         }]}>
           <View style={[styles.headerTop, { 
             marginBottom: dimensions.spacing.medium,
             flexDirection: dimensions.isTablet ? 'row' : 'column',
+            alignItems: 'center',
           }]}>
             <View style={[styles.headerInfo, { 
               flex: dimensions.isTablet ? 1 : undefined,
               marginBottom: dimensions.isTablet ? 0 : dimensions.spacing.medium,
+              alignItems: 'center',
             }]}>
               <Text style={[styles.headerTitle, { 
                 fontSize: dimensions.fontSize.large, 
-                color: colors.text 
+                color: colors.text,
+                textAlign: 'center',
               }]}>
-                Tajik Language Chat
+                {t('tajikLanguageChat')}
               </Text>
               <Text style={[styles.headerSubtitle, { 
                 fontSize: dimensions.fontSize.small, 
                 color: colors.textSecondary, 
-                marginTop: 2 
+                marginTop: 2,
+                textAlign: 'center',
               }]}>
                 {AI_CONFIGS[selectedAI].avatar} {AI_CONFIGS[selectedAI].name} - {AI_CONFIGS[selectedAI].description}
               </Text>
@@ -674,7 +406,7 @@ export default function TajikChatPage() {
             <View style={[styles.headerButtons, { 
               gap: dimensions.spacing.small,
               flexDirection: 'row',
-              justifyContent: dimensions.isTablet ? 'flex-end' : 'center',
+              justifyContent: 'center',
             }]}>
               <TouchableOpacity
                 style={[styles.headerButton, styles.primaryButton, {
@@ -684,6 +416,7 @@ export default function TajikChatPage() {
                   borderRadius: dimensions.borderRadius.small,
                   height: dimensions.buttonHeight,
                   justifyContent: 'center',
+                  minWidth: 80,
                 }]}
                 onPress={toggleChatList}
               >
@@ -694,91 +427,63 @@ export default function TajikChatPage() {
                   {t('chats') || 'Чаты'}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.headerButton, styles.secondaryButton, {
-                  backgroundColor: colors.border,
-                  paddingHorizontal: dimensions.spacing.medium,
-                  paddingVertical: dimensions.spacing.small,
-                  borderRadius: dimensions.borderRadius.small,
-                  height: dimensions.buttonHeight,
-                  justifyContent: 'center',
-                }]}
-                onPress={() => router.push('/')}
-              >
-                <Text style={[styles.buttonText, { 
-                  color: colors.text, 
-                  fontSize: dimensions.fontSize.small 
-                }]}>
-                  {t('home') || 'Домой'}
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
 
           {/* AI Selection */}
-          {renderAISelector()}
+          <AISelector
+            selectedAI={selectedAI}
+            onSelectAI={setSelectedAI}
+            dimensions={dimensions}
+            colors={colors}
+          />
 
           {/* Ameena Mode Selection */}
-          {renderModeSelector()}
+          {selectedAI === 'ameena' && (
+            <ModeSelector
+              selectedMode={selectedMode}
+              onSelectMode={handleModeChange}
+              dimensions={dimensions}
+              colors={colors}
+            />
+          )}
         </View>
 
         {/* Messages */}
-        <ScrollView
-          ref={scrollViewRef}
-          style={[styles.messagesContainer, { flex: 1, marginBottom: dimensions.spacing.medium }]}
-          contentContainerStyle={{ paddingBottom: dimensions.spacing.medium }}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.map(renderMessage)}
-        </ScrollView>
+        <View style={[styles.messagesWrapper, {
+          flex: 1,
+          marginBottom: dimensions.spacing.medium,
+          maxWidth: dimensions.isDesktop ? 1000 : undefined,
+          alignSelf: 'center',
+          width: '100%',
+        }]}>
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.messagesContainer}
+            contentContainerStyle={{ paddingBottom: dimensions.spacing.medium }}
+            showsVerticalScrollIndicator={false}
+          >
+            {messages.map((message, index) => (
+              <MessageItem
+                key={index}
+                message={message}
+                dimensions={dimensions}
+                colors={colors}
+              />
+            ))}
+          </ScrollView>
+        </View>
 
         {/* Input */}
-        <View style={[styles.inputContainer, { 
-          backgroundColor: colors.card,
-          borderRadius: dimensions.borderRadius.medium,
-          paddingHorizontal: dimensions.spacing.medium,
-          paddingVertical: dimensions.spacing.small,
-          minHeight: dimensions.inputHeight,
-          ...styles.inputShadow,
-        }]}>
-          <TextInput
-            style={[styles.textInput, {
-              flex: 1,
-              fontSize: dimensions.fontSize.medium,
-              color: colors.text,
-              maxHeight: dimensions.isTablet ? 100 : 80,
-              paddingVertical: dimensions.spacing.small,
-            }]}
-            placeholder={t('placeholder') || 'Введите сообщение...'}
-            placeholderTextColor={colors.textTertiary}
-            value={input}
-            onChangeText={setInput}
-            onSubmitEditing={askBot}
-            editable={!loading}
-            returnKeyType="send"
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, {
-              backgroundColor: loading ? colors.border : colors.primary,
-              borderRadius: dimensions.borderRadius.small,
-              padding: dimensions.spacing.small,
-              marginLeft: dimensions.spacing.small,
-              width: dimensions.isDesktop ? 32 : 36,
-              height: dimensions.isDesktop ? 32 : 36,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }]}
-            onPress={askBot}
-            disabled={loading || !input.trim()}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <SendIcon size={dimensions.isDesktop ? 14 : 16} color="#ffffff" />
-            )}
-          </TouchableOpacity>
-        </View>
+        <ChatInput
+          input={input}
+          onInputChange={setInput}
+          onSend={askBot}
+          loading={loading}
+          dimensions={dimensions}
+          colors={colors}
+          t={t}
+        />
       </KeyboardAvoidingView>
 
       {/* Chat List Overlay */}
@@ -830,7 +535,7 @@ export default function TajikChatPage() {
                   color: '#ffffff', 
                   fontSize: dimensions.fontSize.small 
                 }]}>
-                  + Новый
+                  + {t('newChat')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -848,7 +553,7 @@ export default function TajikChatPage() {
                   color: colors.text, 
                   fontSize: dimensions.fontSize.small 
                 }]}>
-                  Назад
+                  {t('back')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -935,7 +640,7 @@ export default function TajikChatPage() {
                   color: colors.textSecondary,
                   textAlign: 'center',
                 }]}>
-                  Нет сохраненных чатов.{'\n'}Создайте новый чат для начала.
+                  {t('noSavedChats')}{'\n'}{t('createNewChat')}
                 </Text>
               </View>
             )}
@@ -966,7 +671,7 @@ export default function TajikChatPage() {
               textAlign: 'center',
               marginBottom: dimensions.spacing.medium,
             }]}>
-              Удалить чат
+              {t('deleteChat')}
             </Text>
             <Text style={[styles.modalText, { 
               fontSize: dimensions.fontSize.medium, 
@@ -997,7 +702,7 @@ export default function TajikChatPage() {
                   fontSize: dimensions.fontSize.medium,
                   textAlign: 'center',
                 }]}>
-                  Отмена
+                  {t('cancel')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -1016,7 +721,7 @@ export default function TajikChatPage() {
                   fontSize: dimensions.fontSize.medium,
                   textAlign: 'center',
                 }]}>
-                  Удалить
+                  {t('delete')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1054,7 +759,7 @@ export default function TajikChatPage() {
                 color: '#ffffff', 
                 fontSize: dimensions.fontSize.small,
               }]}>
-                Режим изменен
+                {t('modeChanged')}
               </Text>
               <Text style={[styles.toastDescription, { 
                 color: '#ffffff', 
@@ -1071,7 +776,6 @@ export default function TajikChatPage() {
   );
 }
 
-// Responsive StyleSheet with optimized sizing
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1113,92 +817,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 60,
   },
-  primaryButton: {
-    // Primary button styles
-  },
-  secondaryButton: {
-    // Secondary button styles  
-  },
+  primaryButton: {},
+  secondaryButton: {},
   buttonText: {
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  aiSelectorContainer: {
-    flexDirection: 'row',
-  },
-  aiSelectorButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aiSelectorContent: {
-    alignItems: 'center',
-  },
-  aiSelectorText: {
-    textAlign: 'center',
-  },
-  modeSelectorContainer: {
-    // Mode selector container styles
-  },
-  modeSelectorTitle: {
-    fontWeight: 'bold',
-  },
-  modeRow: {
-    flexDirection: 'row',
-  },
-  modeButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modeButtonText: {
-    textAlign: 'center',
-  },
+  messagesWrapper: {},
   messagesContainer: {
-    // Messages container styles
-  },
-  messageContainer: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  messageShadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  botHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  botName: {
-    fontWeight: 'bold',
-  },
-  messageText: {
-    // Message text styles
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  inputShadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  textInput: {
-    // Text input styles
-  },
-  sendButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendButtonText: {
-    fontWeight: 'bold',
+    flex: 1,
   },
   chatListOverlay: {
     position: 'absolute',
@@ -1207,9 +834,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  chatListContainer: {
-    // Chat list container styles
-  },
+  chatListContainer: {},
   chatListHeader: {
     alignItems: 'center',
   },
@@ -1226,9 +851,7 @@ const styles = StyleSheet.create({
   chatList: {
     flex: 1,
   },
-  chatItem: {
-    // Chat item styles
-  },
+  chatItem: {},
   chatItemShadow: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -1236,34 +859,20 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  chatItemContent: {
-    // Chat item content styles
-  },
-  chatItemInfo: {
-    // Chat item info styles
-  },
+  chatItemContent: {},
+  chatItemInfo: {},
   chatItemTitle: {
     fontWeight: 'bold',
   },
-  chatItemSubtitle: {
-    // Chat item subtitle styles
-  },
-  chatItemMessage: {
-    // Chat item message styles
-  },
+  chatItemSubtitle: {},
+  chatItemMessage: {},
   deleteButton: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  deleteButtonText: {
-    // Delete button text styles
-  },
-  emptyChatList: {
-    // Empty chat list styles
-  },
-  emptyChatText: {
-    // Empty chat text styles
-  },
+  deleteButtonText: {},
+  emptyChatList: {},
+  emptyChatText: {},
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -1283,9 +892,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontWeight: 'bold',
   },
-  modalText: {
-    // Modal text styles
-  },
+  modalText: {},
   modalButtons: {
     width: '100%',
   },
@@ -1293,12 +900,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelButton: {
-    // Cancel button styles
-  },
-  deleteConfirmButton: {
-    // Delete confirm button styles
-  },
+  cancelButton: {},
+  deleteConfirmButton: {},
   modalButtonText: {
     fontWeight: 'bold',
   },
@@ -1316,16 +919,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  toastIcon: {
-    // Toast icon styles
-  },
+  toastIcon: {},
   toastText: {
     flex: 1,
   },
   toastTitle: {
     fontWeight: 'bold',
   },
-  toastDescription: {
-    // Toast description styles
-  },
+  toastDescription: {},
 });
