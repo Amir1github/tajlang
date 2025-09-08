@@ -130,6 +130,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: 50,
+    marginRight: 15,
   },
   rank: {
     fontSize: 16,
