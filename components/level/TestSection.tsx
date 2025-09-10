@@ -4,6 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import FillInBlankQuestion from '@/components/FillInBlankQuestion';
 import type { TestSectionProps } from '@/types/level';
 import { validateAnswer } from '@/utils/testHelpers';
+import ImageQuestion from "@/components/ImageQuestion";
 
 export default function TestSection({
   questions,
@@ -46,25 +47,36 @@ export default function TestSection({
       
       {/* Question Content */}
       {currentQ.type === 'fill_in_blank' ? (
-        <FillInBlankQuestion
-          question={currentQ.question_text}
-          correctAnswer={currentQ.correct_answer}
-          alternativeAnswers={currentQ.alternative_answers}
-          hint={currentQ.hint}
-          onAnswer={(isCorrect, answer) => onAnswer(isCorrect, answer)}
-          disabled={updating}
-        />
-      ) : (
-        <MultipleChoiceQuestion
-          question={currentQ.question_text}
-          options={currentQ.options}
-          correctAnswer={currentQ.correct_answer}
-          alternativeAnswers={currentQ.alternative_answers}
-          hint={currentQ.hint}
-          onAnswer={onAnswer}
-          disabled={updating}
-        />
-      )}
+  <FillInBlankQuestion
+    question={currentQ.question_text}
+    correctAnswer={currentQ.correct_answer}
+    alternativeAnswers={currentQ.alternative_answers}
+    hint={currentQ.hint}
+    onAnswer={(isCorrect, answer) => onAnswer(isCorrect, answer)}
+    disabled={updating}
+  />
+) : currentQ.type === 'image' ? (
+  <ImageQuestion
+    question={currentQ.question_text}
+    options={currentQ.options}
+    correctAnswer={currentQ.correct_answer}
+    alternativeAnswers={currentQ.alternative_answers}
+    hint={currentQ.hint}
+    onAnswer={onAnswer}
+    disabled={updating}
+  />
+) : (
+  <MultipleChoiceQuestion
+    question={currentQ.question_text}
+    options={currentQ.options}
+    correctAnswer={currentQ.correct_answer}
+    alternativeAnswers={currentQ.alternative_answers}
+    hint={currentQ.hint}
+    onAnswer={onAnswer}
+    disabled={updating}
+  />
+)}
+
       
       {/* Previous Question Button */}
       {currentQuestion > 0 && (

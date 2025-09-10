@@ -13,7 +13,7 @@ export type Question = {
   question_text: string;
   correct_answer: string;
   options: string[];
-  type: 'multiple_choice' | 'fill_in_blank';
+  type: 'multiple_choice' | 'fill_in_blank' | 'image';
   hint?: string;
   alternative_answers?: string[];
 };
