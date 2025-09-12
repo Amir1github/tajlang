@@ -22,7 +22,7 @@ const TAJIK_KEYBOARD = [
 export default function FillInBlankQuestion({
   question,
   correctAnswer,
-  alternativeAnswers = [],
+  alternativeAnswers,
   hint,
   onAnswer,
   disabled = false,
@@ -37,6 +37,28 @@ export default function FillInBlankQuestion({
   const [showKeyboard, setShowKeyboard] = useState(false);
   const textInputRef = React.useRef<TextInput>(null);
 
+  // Логирование для отладки
+  console.log('FillInBlankQuestion props:', {
+    question,
+    correctAnswer,
+    alternativeAnswers,
+    alternativeAnswersType: typeof alternativeAnswers,
+    isArray: Array.isArray(alternativeAnswers)
+  });
+
+  // Безопасное преобразование alternativeAnswers в массив
+  const safeAlternativeAnswers = React.useMemo(() => {
+    if (Array.isArray(alternativeAnswers)) {
+      return alternativeAnswers;
+    }
+    if (alternativeAnswers && typeof alternativeAnswers === 'string') {
+      // Если это строка, преобразуем в массив
+      return [alternativeAnswers];
+    }
+    // Возвращаем пустой массив для всех других случаев
+    return [];
+  }, [alternativeAnswers]);
+
   // Разбиваем вопрос на части по пропуску ___
   const questionParts = question.split('___');
   const hasInputAtStart = question.startsWith('___');
@@ -44,22 +66,52 @@ export default function FillInBlankQuestion({
   const hasInputInMiddle = questionParts.length > 2;
 
   const checkAnswer = () => {
-    if (!inputValue.trim()) return;
+    console.log('checkAnswer called with:', {
+      inputValue,
+      correctAnswer,
+      safeAlternativeAnswers
+    });
 
-    const normalizedAnswer = inputValue.trim().toLowerCase();
-    const normalizedCorrect = correctAnswer.toLowerCase();
-    const normalizedAlternatives = alternativeAnswers?.map(a => a.toLowerCase()) || [];
+    if (!inputValue.trim()) {
+      console.log('Empty input, returning early');
+      return;
+    }
 
-    const correct = normalizedAnswer === normalizedCorrect || 
-                   normalizedAlternatives.includes(normalizedAnswer);
+    try {
+      const normalizedAnswer = inputValue.trim().toLowerCase();
+      const normalizedCorrect = correctAnswer.toLowerCase();
+      
+      // Безопасное преобразование альтернативных ответов
+      const normalizedAlternatives = safeAlternativeAnswers
+        .filter(a => typeof a === 'string') // Фильтруем только строки
+        .map(a => a.toLowerCase());
 
-    setIsCorrect(correct);
-    setSubmitted(true);
-    setShowKeyboard(false);
-    onAnswer(correct, inputValue);
+      console.log('Normalized values:', {
+        normalizedAnswer,
+        normalizedCorrect,
+        normalizedAlternatives
+      });
 
-    if (isLastQuestion && correct && onNext) {
-      setTimeout(() => onNext(), 1500);
+      const correct = normalizedAnswer === normalizedCorrect || 
+                     normalizedAlternatives.includes(normalizedAnswer);
+
+      console.log('Answer check result:', correct);
+
+      setIsCorrect(correct);
+      setSubmitted(true);
+      setShowKeyboard(false);
+      onAnswer(correct, inputValue);
+
+      if (isLastQuestion && correct && onNext) {
+        setTimeout(() => onNext(), 1500);
+      }
+    } catch (error) {
+      console.error('Error in checkAnswer:', error);
+      // В случае ошибки, считаем ответ неправильным
+      setIsCorrect(false);
+      setSubmitted(true);
+      setShowKeyboard(false);
+      onAnswer(false, inputValue);
     }
   };
 

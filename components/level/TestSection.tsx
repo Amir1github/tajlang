@@ -48,13 +48,17 @@ export default function TestSection({
       {/* Question Content */}
       {currentQ.type === 'fill_in_blank' ? (
   <FillInBlankQuestion
-    question={currentQ.question_text}
-    correctAnswer={currentQ.correct_answer}
-    alternativeAnswers={currentQ.alternative_answers}
-    hint={currentQ.hint}
-    onAnswer={(isCorrect, answer) => onAnswer(isCorrect, answer)}
-    disabled={updating}
-  />
+  question={currentQ.question_text}
+  correctAnswer={currentQ.correct_answer}
+  alternativeAnswers={currentQ.alternative_answers}
+  hint={currentQ.hint}
+  onAnswer={(isCorrect, answer) => {
+    console.log('FillInBlank answer:', { isCorrect, answer, currentQ });
+    console.log('Alternative answers:', currentQ.alternative_answers, typeof currentQ.alternative_answers);
+    onAnswer(isCorrect, answer || '');
+  }}
+  disabled={updating}
+/>
 ) : currentQ.type === 'image' ? (
   <ImageQuestion
     question={currentQ.question_text}
