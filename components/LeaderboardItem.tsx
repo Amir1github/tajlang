@@ -114,18 +114,16 @@ const styles = StyleSheet.create({
   firstPlace: {
     borderColor: '#FFD700',
     borderWidth: 2,
-    backgroundColor: '#FFF9C4',
   },
   secondPlace: {
     borderColor: '#C0C0C0',
     borderWidth: 2,
-    backgroundColor: '#F5F5F5',
   },
   thirdPlace: {
     borderColor: '#CD7F32',
     borderWidth: 2,
-    backgroundColor: '#FFECB3',
   },
+  
   rankContainer: {
     flexDirection: 'row',
     alignItems: 'center',

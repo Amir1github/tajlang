@@ -126,9 +126,9 @@ export default function ProfileCard({
         </Text>
       </View>
       
-      <View style={styles.streakContainer}>
+      <View style={[styles.streakContainer, { backgroundColor: colors.card}]}>
         <Flame size={24} color={colors.primary} />
-        <Text style={styles.streakText}>
+        <Text style={[styles.streakText, , { color: colors.text }]}>
           {t('currentStreak')}: {profile?.current_streak || 0} {t('days')}
         </Text>
       </View>
