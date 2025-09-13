@@ -40,7 +40,7 @@ export default function OurTeamScreen() {
 
       <View style={styles.memberContainer}>
   <Animated.Image
-    source={require('@/assets/images/member1.jpg')}
+    source={require('@/assets/images/member1.png')}
     style={[
       styles.avatar,
       {

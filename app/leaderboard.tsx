@@ -189,6 +189,7 @@ export default function LeaderboardScreen() {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
+    paddingHorizontal: 20,
     ...(Platform.OS === 'web' && {
       overflowY: 'auto',
       scrollbarWidth: 'thin',
