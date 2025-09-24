@@ -1,16 +1,36 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, Platform } from 'react-native';
-import { Sun, Moon } from 'lucide-react-native';
+import { View, Text, StyleSheet, Pressable, Modal, Platform, Switch } from 'react-native';
+import { Sun, Moon, MessageCircle } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { router } from 'expo-router';
+import { useAuth } from '@/hooks/useAuth';
+import { updateWantChats } from '@/lib/supabase';
 
 interface SettingsModalProps {
   visible: boolean;
   onClose: () => void;
+  wantChats?: boolean;
+  onWantChatsChange?: (value: boolean) => void;
 }
 
-export default function SettingsModal({ visible, onClose }: SettingsModalProps) {
+export default function SettingsModal({ visible, onClose, wantChats = false, onWantChatsChange }: SettingsModalProps) {
   const { t, language, setLanguage, theme, setTheme, colors } = useLanguage();
+  const { user } = useAuth();
+
+  const handleWantChatsChange = async (value: boolean) => {
+    if (!user?.id) return;
+    
+    try {
+      const { error } = await updateWantChats(user.id, value);
+      if (error) {
+        console.error('Error updating want_chats:', error);
+        return;
+      }
+      onWantChatsChange?.(value);
+    } catch (error) {
+      console.error('Error updating want_chats:', error);
+    }
+  };
 
   return (
     <Modal
@@ -118,6 +138,29 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
               </Pressable>
             </View>
           </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Общение</Text>
+            <View style={[styles.chatSetting, { backgroundColor: colors.background }]}>
+              <View style={styles.chatSettingLeft}>
+                <MessageCircle size={20} color={colors.primary} />
+                <View style={styles.chatSettingText}>
+                  <Text style={[styles.chatSettingTitle, { color: colors.text }]}>
+                    Разрешить чаты
+                  </Text>
+                  <Text style={[styles.chatSettingDescription, { color: colors.textSecondary }]}>
+                    Другие пользователи смогут начать с вами чат
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={wantChats}
+                onValueChange={handleWantChatsChange}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={wantChats ? '#fff' : colors.textSecondary}
+              />
+            </View>
+          </View>
           
           <View style={styles.footerLinks}>
             <Pressable 
@@ -220,6 +263,32 @@ const styles = StyleSheet.create({
   },
   languageText: {
     fontSize: 16,
+  },
+  chatSetting: {
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  chatSettingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 16,
+  },
+  chatSettingText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  chatSettingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  chatSettingDescription: {
+    fontSize: 14,
+    lineHeight: 18,
   },
   footerLinks: {
     flexDirection: 'row',

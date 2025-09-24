@@ -1,18 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import { Lock, LogOut } from 'lucide-react-native';
+import { Lock, LogOut, MessageCircle } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AccountActionsProps {
   onChangePassword: () => void;
   onSignOut: () => void;
+  onChatsPress: () => void;
 }
 
-export default function AccountActions({ onChangePassword, onSignOut }: AccountActionsProps) {
+export default function AccountActions({ onChangePassword, onSignOut, onChatsPress }: AccountActionsProps) {
   const { t, colors } = useLanguage();
 
   return (
     <View style={styles.accountActions}>
+      <Pressable
+        style={[styles.actionButton, styles.chatsButton, { backgroundColor: colors.card, borderColor: colors.primary }]}
+        onPress={onChatsPress}
+      >
+        <MessageCircle size={20} color={colors.primary} />
+        <Text style={[styles.actionButtonText, { color: colors.primary }]}>Чаты</Text>
+      </Pressable>
+
       <Pressable
         style={[styles.actionButton, styles.changePasswordButton, { backgroundColor: colors.card, borderColor: colors.primary }]}
         onPress={onChangePassword}

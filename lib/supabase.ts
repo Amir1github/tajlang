@@ -41,8 +41,34 @@ export type Profile = {
   last_completed_at: string | null;
   status?: 'online' | 'offline';
   last_seen?: string;
+  want_chats?: boolean;
   created_at: string;
   updated_at: string;
+};
+
+// Types for messaging
+export type Message = {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  read: boolean;
+  created_at: string;
+  updated_at: string;
+  sender?: Profile;
+  receiver?: Profile;
+};
+
+export type Chat = {
+  id: string;
+  user1_id: string;
+  user2_id: string;
+  created_at: string;
+  updated_at: string;
+  last_message?: Message;
+  user1?: Profile;
+  user2?: Profile;
+  unread_count?: number;
 };
 
 export async function updateUserStatus(userId: string, status: 'online' | 'offline') {
@@ -290,6 +316,160 @@ export async function updateUserProgress(
     console.error('Error updating user progress:', error);
     return { error: error as Error };
   }
+}
 
 // Получить текущего пользователя из Supabase Auth
+
+// Chat functions
+export async function createChat(user1Id: string, user2Id: string): Promise<{ chat: Chat | null; error: Error | null }> {
+  try {
+    // Check if chat already exists
+    const { data: existingChat, error: existingError } = await supabase
+      .from('chats')
+      .select('*')
+      .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
+      .single();
+
+    if (existingChat) {
+      return { chat: existingChat, error: null };
+    }
+
+    // Create new chat
+    const { data: newChat, error } = await supabase
+      .from('chats')
+      .insert({
+        user1_id: user1Id,
+        user2_id: user2Id,
+      })
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return { chat: newChat, error: null };
+  } catch (error) {
+    console.error('Error creating chat:', error);
+    return { chat: null, error: error as Error };
+  }
+}
+
+export async function sendMessage(chatId: string, senderId: string, receiverId: string, content: string): Promise<{ message: Message | null; error: Error | null }> {
+  try {
+    const { data: message, error } = await supabase
+      .from('messages')
+      .insert({
+        chat_id: chatId,
+        sender_id: senderId,
+        receiver_id: receiverId,
+        content: content,
+        read: false,
+      })
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return { message, error: null };
+  } catch (error) {
+    console.error('Error sending message:', error);
+    return { message: null, error: error as Error };
+  }
+}
+
+export async function getChats(userId: string): Promise<{ chats: Chat[]; error: Error | null }> {
+  try {
+    const { data: chats, error } = await supabase
+      .from('chats')
+      .select(`
+        *,
+        user1:profiles!chats_user1_id_fkey(*),
+        user2:profiles!chats_user2_id_fkey(*),
+        messages:messages(*)
+      `)
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Process chats to add last message and unread count
+    const processedChats = chats?.map(chat => {
+      const messages = chat.messages || [];
+      const lastMessage = messages.length > 0 
+        ? messages.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+        : null;
+      
+      const unreadCount = messages.filter(msg => 
+        msg.receiver_id === userId && !msg.read
+      ).length;
+
+      return {
+        ...chat,
+        last_message: lastMessage,
+        unread_count: unreadCount,
+      };
+    }) || [];
+
+    return { chats: processedChats, error: null };
+  } catch (error) {
+    console.error('Error getting chats:', error);
+    return { chats: [], error: error as Error };
+  }
+}
+
+export async function getMessages(chatId: string, userId: string): Promise<{ messages: Message[]; error: Error | null }> {
+  try {
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:profiles!messages_sender_id_fkey(*),
+        receiver:profiles!messages_receiver_id_fkey(*)
+      `)
+      .eq('chat_id', chatId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    // Mark messages as read
+    await supabase
+      .from('messages')
+      .update({ read: true })
+      .eq('chat_id', chatId)
+      .eq('receiver_id', userId)
+      .eq('read', false);
+
+    return { messages: messages || [], error: null };
+  } catch (error) {
+    console.error('Error getting messages:', error);
+    return { messages: [], error: error as Error };
+  }
+}
+
+export async function updateWantChats(userId: string, wantChats: boolean): Promise<{ error: Error | null }> {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ want_chats: wantChats })
+      .eq('id', userId);
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    console.error('Error updating want_chats:', error);
+    return { error: error as Error };
+  }
+}
+
+// Real-time subscription for messages
+export function subscribeToMessages(userId: string, callback: (message: Message) => void) {
+  const channel = supabase.channel('messages')
+    .on('postgres_changes', { 
+      event: 'INSERT', 
+      schema: 'public', 
+      table: 'messages',
+      filter: `receiver_id=eq.${userId}`
+    }, (payload) => {
+      callback(payload.new as Message);
+    })
+    .subscribe();
+
+  return channel;
 }

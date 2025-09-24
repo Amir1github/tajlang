@@ -1,8 +1,11 @@
 import React from 'react';
 import { Modal, View, Text, StyleSheet, Pressable, ScrollView, Image, Platform } from 'react-native';
-import { X, Circle, Crown, Award, Star } from 'lucide-react-native';
+import { X, Circle, Crown, Award, Star, MessageCircle } from 'lucide-react-native';
 import { LeaderboardUser } from '@/types/leaderboard';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
+import { createChat } from '@/lib/supabase';
+import { router } from 'expo-router';
 interface UserProfileModalProps {
   visible: boolean;
   user: LeaderboardUser | null;
@@ -66,6 +69,28 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   t,
   onClose
 }) => {
+  const { user: currentUser } = useAuth();
+
+  const handleStartChat = async () => {
+    if (!currentUser?.id || !user?.id) return;
+
+    try {
+      const { chat, error } = await createChat(currentUser.id, user.id);
+      if (error) {
+        console.error('Error creating chat:', error);
+        return;
+      }
+
+      onClose();
+      if (chat) {
+        router.push(`/chat/${chat.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating chat:', error);
+    }
+  };
+
+  const canStartChat = user?.want_chats && user?.id !== currentUser?.id;
   return (
     <Modal
       animationType="fade"
@@ -172,6 +197,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   </Text>
                 </View>
               </View>
+
+              {/* Start Chat Button */}
+              {canStartChat && (
+                <View style={styles.chatButtonContainer}>
+                  <Pressable
+                    style={[styles.chatButton, { backgroundColor: colors.primary }]}
+                    onPress={handleStartChat}
+                  >
+                    <MessageCircle size={20} color="#fff" />
+                    <Text style={styles.chatButtonText}>Начать чат</Text>
+                  </Pressable>
+                </View>
+              )}
             </ScrollView>
           ) : null}
         </View>
@@ -293,5 +331,23 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#ffffff',
     borderRadius: 10,
+  },
+  chatButtonContainer: {
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+  },
+  chatButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

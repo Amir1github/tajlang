@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useProfileData } from '@/hooks/useProfileData';
 import { useProfileActions } from '@/hooks/useProfileActions';
+import { router } from 'expo-router';
 
 // Components
 import ProfileHeader from '@/components/profile_components/ProfileHeader';
@@ -116,11 +117,18 @@ export default function ProfileScreen() {
         <AccountActions
           onChangePassword={handleChangePassword}
           onSignOut={handleSignOut}
+          onChatsPress={() => router.push('/personal-chats')}
         />
 
         <SettingsModal
           visible={showSettings}
           onClose={() => setShowSettings(false)}
+          wantChats={profile?.want_chats || false}
+          onWantChatsChange={(value) => {
+            if (profile) {
+              setProfile({ ...profile, want_chats: value });
+            }
+          }}
         />
       </ScrollView>
     </View>

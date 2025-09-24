@@ -13,6 +13,7 @@ type LeaderboardUser = {
   last_seen?: string | null;
   best_streak: number;
   rank?: number;
+  want_chats: boolean;
 };
 
 interface LeaderboardItemProps {
