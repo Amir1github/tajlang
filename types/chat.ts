@@ -23,6 +23,7 @@ export interface Message {
     description: string;
     avatar: string;
     color: string;
+    website?: string; // Optional website link
   }
   
   export interface AmeenaMode {

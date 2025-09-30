@@ -1,7 +1,13 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet,
+  Linking 
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ResponsiveDimensions } from '@/types/chat';
-import { AISelector } from './AISelector';
 import { ModeSelector } from './ModeSelector';
 import { AI_CONFIGS } from '@/utils/constants';
 
@@ -26,6 +32,43 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onModeChange,
   onToggleChatList
 }) => {
+  const currentAI = AI_CONFIGS[selectedAI];
+
+  const handleWebsitePress = () => {
+    if (currentAI.website) {
+      Linking.openURL(currentAI.website);
+    }
+  };
+
+  const renderAvatar = () => {
+    if (selectedAI === 'ameena') {
+      return (
+        <LinearGradient
+          colors={['#6B46C1', '#10B981']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.logoMark, {
+            width: dimensions.isDesktop ? 40 : 32,
+            height: dimensions.isDesktop ? 40 : 32,
+            borderRadius: 10,
+          }]}
+        >
+          <Text style={[styles.logoText, {
+            fontSize: dimensions.isDesktop ? 18 : 14,
+          }]}>A</Text>
+        </LinearGradient>
+      );
+    } else {
+      return (
+        <Text style={[styles.avatarEmoji, {
+          fontSize: dimensions.isDesktop ? 32 : 24,
+        }]}>
+          {currentAI.avatar}
+        </Text>
+      );
+    }
+  };
+
   return (
     <View style={[{
       backgroundColor: colors.card, 
@@ -59,15 +102,49 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           }]}>
             {t('tajikLanguageChat')}
           </Text>
-          <Text style={[{
-            fontSize: dimensions.fontSize.small, 
-            color: colors.textSecondary, 
-            marginTop: 2,
-            textAlign: 'center',
+          
+          {/* AI Info with Avatar */}
+          <View style={[styles.aiInfoRow, {
+            marginTop: dimensions.spacing.small,
           }]}>
-            {AI_CONFIGS[selectedAI].avatar} {AI_CONFIGS[selectedAI].name} - {AI_CONFIGS[selectedAI].description}
-          </Text>
+            {renderAvatar()}
+            <View style={styles.aiDetails}>
+              <Text style={[{
+                fontSize: dimensions.fontSize.small, 
+                color: colors.text,
+                fontWeight: '600',
+              }]}>
+                {currentAI.name}
+              </Text>
+              <Text style={[{
+                fontSize: dimensions.fontSize.small * 0.85, 
+                color: colors.textSecondary,
+              }]}>
+                {currentAI.description}
+              </Text>
+            </View>
+          </View>
+
+          {/* Ameena Website Link */}
+          {selectedAI === 'ameena' && currentAI.website && (
+            <TouchableOpacity 
+              onPress={handleWebsitePress} 
+              style={[styles.websiteButton, {
+                marginTop: dimensions.spacing.small,
+                paddingVertical: dimensions.spacing.small * 0.6,
+                paddingHorizontal: dimensions.spacing.small,
+                borderRadius: dimensions.borderRadius.small,
+              }]}
+            >
+              <Text style={[styles.websiteText, {
+                fontSize: dimensions.fontSize.small * 0.9,
+              }]}>
+                🌐 {t('original_website') || 'Сайти аслӣ'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
+
         <TouchableOpacity
           style={[{
             backgroundColor: colors.primary,
@@ -91,13 +168,66 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         </TouchableOpacity>
       </View>
 
-      <AISelector
-        selectedAI={selectedAI}
-        onSelectAI={onSelectAI}
-        dimensions={dimensions}
-        colors={colors}
-      />
+      {/* Compact AI Selector */}
+      <View style={[styles.aiSelectorContainer, {
+        marginBottom: selectedAI === 'ameena' ? dimensions.spacing.medium : 0,
+      }]}>
+        <View style={[styles.aiSelector, {
+          backgroundColor: colors.background,
+          borderRadius: dimensions.borderRadius.small,
+          padding: 4,
+        }]}>
+          <TouchableOpacity
+            onPress={() => onSelectAI('gemini')}
+            style={[
+              styles.aiButton,
+              {
+                paddingVertical: dimensions.spacing.small,
+                paddingHorizontal: dimensions.spacing.medium,
+                borderRadius: dimensions.borderRadius.small - 2,
+                backgroundColor: selectedAI === 'gemini' ? colors.primary : 'transparent',
+              }
+            ]}
+          >
+            <Text style={[
+              styles.buttonText,
+              {
+                fontSize: dimensions.fontSize.small,
+                color: selectedAI === 'gemini' ? '#ffffff' : colors.text,
+                fontWeight: selectedAI === 'gemini' ? 'bold' : 'normal',
+              }
+            ]}>
+              ✨ Gemini
+            </Text>
+          </TouchableOpacity>
 
+          <TouchableOpacity
+            onPress={() => onSelectAI('ameena')}
+            style={[
+              styles.aiButton,
+              {
+                paddingVertical: dimensions.spacing.small,
+                paddingHorizontal: dimensions.spacing.medium,
+                borderRadius: dimensions.borderRadius.small - 2,
+                backgroundColor: selectedAI === 'ameena' ? colors.primary : 'transparent',
+              }
+            ]}
+          >
+            <Text style={[
+              styles.buttonText,
+              {
+                fontSize: dimensions.fontSize.small,
+                color: selectedAI === 'ameena' ? '#ffffff' : colors.text,
+                fontWeight: selectedAI === 'ameena' ? 'bold' : 'normal',
+              }
+            ]}>
+              Амина
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Mode Selector for Ameena */}
       {selectedAI === 'ameena' && (
         <ModeSelector
           selectedMode={selectedMode}
@@ -109,3 +239,49 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  aiInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  logoMark: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  avatarEmoji: {
+    lineHeight: undefined,
+  },
+  aiDetails: {
+    alignItems: 'flex-start',
+  },
+  websiteButton: {
+    backgroundColor: 'rgba(107, 70, 193, 0.1)',
+    alignSelf: 'center',
+  },
+  websiteText: {
+    color: '#6B46C1',
+    fontWeight: '500',
+  },
+  aiSelectorContainer: {
+    alignItems: 'center',
+  },
+  aiSelector: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    gap: 4,
+  },
+  aiButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100,
+  },
+  buttonText: {
+    textAlign: 'center',
+  },
+});
