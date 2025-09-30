@@ -10,14 +10,16 @@ export const AI_CONFIGS: Record<string, AIConfig> = {
     version: '1.5 Pro',
     description: 'Google\'s advanced AI model',
     avatar: '✨',
-    color: '#4285F4'
+    color: '#4285F4',
+    website: 'https://gemini.google.com/app'
   },
   ameena: {
     name: 'Амина',
     version: 'v3.0',
     description: 'Ёвари ҳушманди пешрафта',
-    avatar: '🌸',
-    color: '#9C27B0'
+    avatar: 'A',
+    color: '#9C27B0',
+    website: 'https://ameena.saidzoda.com'
   }
 };
 
