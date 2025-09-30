@@ -1,29 +1,41 @@
-import { View, Text, StyleSheet, FlatList, Image, Platform } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
 import { supabase, getUserStatus } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LeaderboardItem } from '@/components/LeaderboardItem';
 import { UserProfileModal } from '@/components/UserProfileModal';
 import { LeaderboardUser } from '@/types/leaderboard';
+import { LeaderboardHeader } from '@/components/leaderboard/LeaderboardHeader';
+import { LeaderboardFilters } from '@/components/leaderboard/LeaderboardFilters';
+import { LeaderboardList } from '@/components/leaderboard/LeaderboardList';
+import { FilterOptions, SortOption } from '@/types/filters';
 
 export default function LeaderboardScreen() {
   const { t, colors } = useLanguage();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([]);
+  const [filteredData, setFilteredData] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<LeaderboardUser | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
+  
+  // Состояния для поиска и фильтров
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<FilterOptions>({
+    minXP: undefined,
+    maxXP: undefined,
+    minStreak: undefined,
+    onlineStatus: undefined,
+    wantChats: undefined,
+    location: undefined, // Готово к добавлению локаций
+  });
+  const [sortOption, setSortOption] = useState<SortOption>('xp_desc');
 
-  // ИСПРАВЛЕНО: добавлен useCallback и правильная обработка параметров
-  const updateUserStatuses = useCallback(async (users?: LeaderboardUser[]) => {
-    // Используем текущие данные если users не переданы
-    const usersToUpdate = users || leaderboardData;
-    
-    if (usersToUpdate.length === 0) return;
+  const updateUserStatuses = useCallback(async (users: LeaderboardUser[]) => {
+    if (users.length === 0) return users;
 
     try {
       const updatedUsers = await Promise.all(
-        usersToUpdate.map(async (user) => {
+        users.map(async (user) => {
           const { status, lastSeen } = await getUserStatus(user.id);
           return {
             ...user,
@@ -33,11 +45,12 @@ export default function LeaderboardScreen() {
         })
       );
       
-      setLeaderboardData(updatedUsers);
+      return updatedUsers;
     } catch (error) {
       console.error('Error updating user statuses:', error);
+      return users;
     }
-  }, [leaderboardData]);
+  }, []);
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -54,14 +67,90 @@ export default function LeaderboardScreen() {
         rank: index + 1
       }));
       
-      setLeaderboardData(rankedData);
-      await updateUserStatuses(rankedData);
+      const updatedData = await updateUserStatuses(rankedData);
+      setLeaderboardData(updatedData);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [updateUserStatuses]);
+
+  const applyFiltersAndSort = useCallback(() => {
+    let result = [...leaderboardData];
+
+    // Поиск по никнейму
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(user => 
+        user.username.toLowerCase().includes(query)
+      );
+    }
+
+    // Фильтрация по XP
+    if (filters.minXP !== undefined) {
+      result = result.filter(user => user.xp_points >= filters.minXP!);
+    }
+    if (filters.maxXP !== undefined) {
+      result = result.filter(user => user.xp_points <= filters.maxXP!);
+    }
+
+    // Фильтрация по streak
+    if (filters.minStreak !== undefined) {
+      result = result.filter(user => user.best_streak >= filters.minStreak!);
+    }
+
+    // Фильтрация по статусу онлайн
+    if (filters.onlineStatus !== undefined) {
+      result = result.filter(user => user.status === filters.onlineStatus);
+    }
+
+    // Фильтрация по желанию общаться
+    if (filters.wantChats !== undefined) {
+      result = result.filter(user => user.want_chats === filters.wantChats);
+    }
+
+    // Фильтрация по локации (готово к использованию)
+    if (filters.location) {
+      result = result.filter(user => 
+        user.location?.toLowerCase().includes(filters.location!.toLowerCase())
+      );
+    }
+
+    // Сортировка
+    switch (sortOption) {
+      case 'xp_desc':
+        result.sort((a, b) => b.xp_points - a.xp_points);
+        break;
+      case 'xp_asc':
+        result.sort((a, b) => a.xp_points - b.xp_points);
+        break;
+      case 'streak_desc':
+        result.sort((a, b) => b.best_streak - a.best_streak);
+        break;
+      case 'streak_asc':
+        result.sort((a, b) => a.best_streak - b.best_streak);
+        break;
+      case 'last_seen':
+        result.sort((a, b) => {
+          const dateA = a.last_seen ? new Date(a.last_seen).getTime() : 0;
+          const dateB = b.last_seen ? new Date(b.last_seen).getTime() : 0;
+          return dateB - dateA;
+        });
+        break;
+      case 'username':
+        result.sort((a, b) => a.username.localeCompare(b.username));
+        break;
+    }
+
+    // Обновляем ранги после фильтрации
+    result = result.map((user, index) => ({
+      ...user,
+      rank: index + 1
+    }));
+
+    setFilteredData(result);
+  }, [leaderboardData, searchQuery, filters, sortOption]);
 
   const fetchUserDetails = useCallback(async (userId: string) => {
     try {
@@ -75,7 +164,7 @@ export default function LeaderboardScreen() {
       if (error) throw error;
 
       const { status, lastSeen } = await getUserStatus(userId);
-      const userWithRank = leaderboardData.find(user => user.id === userId);
+      const userWithRank = filteredData.find(user => user.id === userId);
       
       const userDetails = {
         ...data,
@@ -92,7 +181,7 @@ export default function LeaderboardScreen() {
     } finally {
       setLoadingUserDetails(false);
     }
-  }, [leaderboardData]);
+  }, [filteredData]);
 
   const handleUserPress = useCallback(async (user: LeaderboardUser) => {
     try {
@@ -109,69 +198,60 @@ export default function LeaderboardScreen() {
     setSelectedUser(null);
   }, []);
 
+  const handleResetFilters = useCallback(() => {
+    setSearchQuery('');
+    setFilters({
+      minXP: undefined,
+      maxXP: undefined,
+      minStreak: undefined,
+      onlineStatus: undefined,
+      wantChats: undefined,
+      location: undefined,
+    });
+    setSortOption('xp_desc');
+  }, []);
+
   useEffect(() => {
     fetchLeaderboard();
   }, []);
 
   useEffect(() => {
-    // ИСПРАВЛЕНО: обновление статусов только если есть данные
+    applyFiltersAndSort();
+  }, [applyFiltersAndSort]);
+
+  useEffect(() => {
     if (leaderboardData.length === 0) return;
 
-    const statusInterval = setInterval(() => {
-      updateUserStatuses();
+    const statusInterval = setInterval(async () => {
+      const updated = await updateUserStatuses(leaderboardData);
+      setLeaderboardData(updated);
     }, 30000);
 
     return () => clearInterval(statusInterval);
   }, [leaderboardData.length, updateUserStatuses]);
 
-  if (loading) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.headerContainer}>
-          <Image 
-            source={require('@/assets/images/icon.png')} 
-            style={styles.headerIcon} 
-            resizeMode="contain"
-          />
-          <Text style={[styles.header, { color: colors.text }]}>Leaderboard</Text>
-        </View>
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading top learners...</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.headerContainer}>
-        <Image 
-          source={require('@/assets/images/icon.png')} 
-          style={styles.headerIcon} 
-          resizeMode="contain"
-        />
-        <View>
-          <Text style={[styles.header, { color: colors.text }]}>{t('leaderboard')}</Text>
-          <Text style={[styles.subHeader, { color: colors.textSecondary }]}>{t('top_learners')}</Text>
-        </View>
-      </View>
+      <LeaderboardHeader colors={colors} t={t} />
       
-      <FlatList
-        data={leaderboardData}
-        renderItem={({ item }) => (
-          <LeaderboardItem 
-            item={item} 
-            colors={colors} 
-            onPress={handleUserPress}
-          />
-        )}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.leaderboardList}
-        ListEmptyComponent={
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            No learners found. Be the first!
-          </Text>
-        }
-        showsVerticalScrollIndicator={Platform.OS === 'web'}
-        style={styles.scrollContainer}
+      <LeaderboardFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filters={filters}
+        onFiltersChange={setFilters}
+        sortOption={sortOption}
+        onSortChange={setSortOption}
+        onResetFilters={handleResetFilters}
+        colors={colors}
+        t={t}
+      />
+      
+      <LeaderboardList
+        data={filteredData}
+        loading={loading}
+        colors={colors}
+        t={t}
+        onUserPress={handleUserPress}
       />
 
       <UserProfileModal
@@ -187,49 +267,8 @@ export default function LeaderboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    ...(Platform.OS === 'web' && {
-      overflowY: 'auto',
-      scrollbarWidth: 'thin',
-    }),
-  },
   container: {
     padding: 20,
     flex: 1
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  headerIcon: {
-    width: 56,
-    height: 56,
-    marginRight: 16,
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  subHeader: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  leaderboardList: {
-    gap: 12,
-    paddingBottom: 16,
-  },
-  loadingText: {
-    fontSize: 15,
-    textAlign: 'center',
-    marginTop: 24,
-  },
-  emptyText: {
-    fontSize: 15,
-    textAlign: 'center',
-    marginTop: 24,
-    padding: 16,
   },
 });

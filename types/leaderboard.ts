@@ -1,15 +1,16 @@
-export type LeaderboardUser = {
-    id: string;
-    username: string;
-    description: string;
-    avatar_url: string;
-    xp_points: number;
-    status?: 'online' | 'offline';
-    last_seen?: string | null;
-    best_streak: number;
-    rank?: number;
-    want_chats?: boolean;
-  };
+export interface LeaderboardUser {
+  id: string;
+  username: string;
+  description: string | null;
+  avatar_url: string | null;
+  xp_points: number;
+  best_streak: number;
+  status: 'online' | 'offline';
+  last_seen: string | null;
+  want_chats: boolean;
+  rank: number;
+  location?: string; // Готово к использованию когда добавите в БД
+}
   
   export type UserStatus = 'online' | 'offline';
   
