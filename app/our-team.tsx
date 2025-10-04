@@ -57,7 +57,25 @@ export default function OurTeamScreen() {
     {language === 'ru' ? 'Разработчик сайта' : 'Website Developer'}
   </Text>
 </View>
-
+<View style={styles.memberContainer}>
+  <Animated.Image
+    source={require('@/assets/images/member2.jpg')}
+    style={[
+      styles.avatar,
+      {
+        transform: [{ scale: scaleAnim }],
+        borderColor: colors.border,
+      },
+    ]}
+    resizeMode="cover"
+  />
+  <Text style={[styles.nameText, { color: colors.text }]}>
+    {language === 'ru' ? 'Saidzoda Engineering' : 'Saidzoda Engineering'}
+  </Text>
+  <Text style={[styles.roleText, { color: colors.textSecondary }]}>
+    {language === 'ru' ? 'Поставщик модели нейросети Ameena' : 'Поставщик модели нейросети Ameena'}
+  </Text>
+</View>
     </View>
   );
 }
