@@ -235,13 +235,13 @@ function ReadingSection({
       {Platform.OS === 'web' ? (
         <ScrollView style={styles.webContent}>
           <div 
-            dangerouslySetInnerHTML={{ __html: generateHTML(content, colors) }}
+            dangerouslySetInnerHTML={{ __html: generateHTML(content, colors, t) }}
             style={{ padding: 20 }}
           />
         </ScrollView>
       ) : (
         <WebView
-          source={{ html: generateHTML(content, colors) }}
+          source={{ html: generateHTML(content, colors, t) }}
           style={styles.webview}
           showsVerticalScrollIndicator={true}
           nestedScrollEnabled={true}
@@ -267,78 +267,42 @@ function ReadingSection({
   );
 }
 
-// Функция для генерации HTML с правильными стилями
-function generateHTML(content: string, colors: any): string {
+function generateHTML(content, colors, t) {
   return `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
           body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            line-height: 1.6;
             color: ${colors.text};
             background-color: ${colors.background};
-            
-            margin: 0;
-            font-size: 16px;
+            font-family: sans-serif;
+            padding: 16px;
           }
-          h1, h2, h3, h4, h5, h6 {
+
+          .word {
+            position: relative;
+            cursor: pointer;
+            color: ${colors.primary};
+            border-bottom: 1px dashed ${colors.primary};
+          }
+
+          .word:hover::after {
+            content: attr(data-translation);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: ${colors.card};
             color: ${colors.text};
-            margin-top: 24px;
-            margin-bottom: 16px;
-          }
-          p {
-            margin-bottom: 16px;
-            text-align: justify;
-          }
-          strong, b {
-            color: ${colors.primary};
-            font-weight: 600;
-          }
-          em, i {
-            font-style: italic;
-          }
-          ul, ol {
-            margin-bottom: 16px;
-            padding-left: 20px;
-          }
-          li {
-            margin-bottom: 8px;
-          }
-          blockquote {
-            border-left: 4px solid ${colors.primary};
-            background-color: ${colors.card};
-            margin: 16px 0;
-            padding: 16px;
+            border: 1px solid ${colors.border};
+            padding: 6px 10px;
             border-radius: 8px;
-          }
-          code {
-            background-color: ${colors.card};
-            padding: 2px 4px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-          }
-          pre {
-            background-color: ${colors.card};
-            padding: 16px;
-            border-radius: 8px;
-            overflow-x: auto;
-          }
-          img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin: 16px 0;
-          }
-          a {
-            color: ${colors.primary};
-            text-decoration: none;
-          }
-          a:hover {
-            text-decoration: underline;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            font-size: 14px;
+            z-index: 1000;
           }
         </style>
       </head>
@@ -348,6 +312,7 @@ function generateHTML(content: string, colors: any): string {
     </html>
   `;
 }
+
 
 const styles = StyleSheet.create({
   container: {
