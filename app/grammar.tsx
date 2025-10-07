@@ -41,12 +41,8 @@ export default function Grammar() {
     { title: "Phrases", path: "/grammar_components/phrases", icon: "💬" },
     { title: "Grammar Rules", path: "/grammar_components/grammar", icon: "📘" },
     { title: "Vocabulary", path: "/grammar_components/vocabulary", icon: "🔤" },
-    { title: "Verbs", path: "/grammar_components/verbs", icon: "⚡" },
-    { title: "Exam", path: "/grammar_components/exam", icon: "📊" },
-    { title: "Audio", path: "/grammar_components/audio", icon: "🎵" },
-    { title: "Translation", path: "/grammar_components/translation", icon: "🌐" },
-    { title: "500 Popular Words", path: "/grammar_components/popular-words", icon: "📚" },
-    { title: "Alphabet", path: "/grammar_components/alphabet", icon: "🔤" },
+    { title: "Verbs", path: "/grammar_components/verbs", icon: "⚡" }
+    
   ];
 
  
