@@ -98,10 +98,7 @@ function FloatingActionButton() {
     router.push('/chat');
   };
 
-  const handleGrammarPress = () => {
-    setMenuVisible(false);
-    router.push('/grammar');
-  };
+  
 
   return (
     <View style={styles.fabContainer}>
@@ -130,10 +127,7 @@ function FloatingActionButton() {
             <Text style={[styles.menuText, { color: colors.text }]}>{t('chatAssistant')}</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem} onPress={handleGrammarPress}>
-            <FileText size={20} color={colors.primary} style={styles.menuIcon} />
-            <Text style={[styles.menuText, { color: colors.text }]}>{t('grammar')}</Text>
-          </TouchableOpacity>
+          
         </Animated.View>
       )}
     </View>
