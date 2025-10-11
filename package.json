@@ -8,6 +8,9 @@
     "build": "expo export --platform web",
     "build:web": "expo export --platform web",
     "lint": "expo lint"
+
+
+
   },
   "dependencies": {
     "@emailjs/browser": "^4.3.3",
@@ -39,6 +42,7 @@
     "git": "^0.1.5",
     "lucide-react-native": "^0.475.0",
     "netlify-cli": "^23.1.4",
+    "next-sitemap": "^4.2.3",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.76.6",

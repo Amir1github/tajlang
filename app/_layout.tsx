@@ -201,11 +201,13 @@ function RootLayoutContent() {
       <Head>
         <title>Tajlang</title>
         <meta name="description" content="Learn Tajik with Tajlang" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/x-icon" href="https://tajlang.netlify.app/favicon.ico" />
+
         <meta property="og:title" content="Tajlang" />
         <meta property="og:description" content="The best online service for learning Tajik" />
         <meta property="og:image" content="https://tajlang.netlify.app/preview.png" />
         <meta property="og:url" content="https://tajlang.netlify.app" />
+
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Tajlang" />
         <meta name="twitter:description" content="The best online service for learning Tajik" />
