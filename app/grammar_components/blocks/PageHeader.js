@@ -14,7 +14,7 @@ const PageHeader = ({
 }) => {
   const router = useRouter();
 
-  const onBackPress = () => router.push('/grammar');
+  const onBackPress = () => router.back();
 
   return (
     <View style={[styles.header, headerStyle]}>
