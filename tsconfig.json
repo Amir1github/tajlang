@@ -12,5 +12,5 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"
-  ]
+, "app/grammar_components/plural.js", "app/grammar_components/adjectives.js", "app/grammar_components/gender.js", "app/grammar_components/nouns.js"  ]
 }

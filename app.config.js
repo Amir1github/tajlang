@@ -1,4 +1,4 @@
-export default {
+export default ({ config }) => ({
   name: 'Tajlang',
   slug: 'bolt-expo-nativewind',
   version: '1.0.0',
@@ -8,10 +8,12 @@ export default {
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
   splash: {
-    image: './assets/images/splash.png',
+    //image: './assets/images/splash.png',
     resizeMode: 'contain',
     backgroundColor: '#ffffff'
   },
+  ...config,
+  
   ios: {
     supportsTablet: true
   },
@@ -23,7 +25,19 @@ export default {
   experiments: {
     typedRoutes: true
   },
+  android: {
+    ...config.android,
+    package: "com.tajlang.netlify" // <- сюда твой уникальный идентификатор
+  },
+  ios: {
+    ...config.ios,
+    bundleIdentifier: "com.tajlang.netlify"
+  },
+  
   extra: {
+    eas: {
+      projectId: "972957ad-f55e-4083-98ca-0e5175085f49"
+    },
     EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
     EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     EXPO_PUBLIC_EMAILJS_PUBLIC_KEY: process.env.EXPO_PUBLIC_EMAILJS_PUBLIC_KEY,
@@ -41,4 +55,4 @@ export default {
       }
     }
   }
-};
+});

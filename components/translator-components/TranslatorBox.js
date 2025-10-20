@@ -49,6 +49,7 @@ const TranslatorBox = ({
   const styles = StyleSheet.create({
     translatorContainer: {
       backgroundColor: colors.card,
+      overflow: 'visible',
       borderRadius: 16,
       padding: 16,
       marginBottom: 16,
