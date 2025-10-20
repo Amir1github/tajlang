@@ -36,28 +36,31 @@ const LanguagePicker = ({ value, onValueChange, languages, colors }) => {
       shadowOpacity: 0.05,
       shadowRadius: 2,
       elevation: 1,
+      
     },
     selectText: {
       color: colors.text,
       fontSize: 12,
       fontWeight: '600',
+      position: 'absolute',
+      zIndex: 100000,
     },
     pickerModal: {
       position: 'absolute',
-      top: 36,
+      top: 40,
       right: 0,
       backgroundColor: colors.card,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: colors.border,
-      zIndex: 1000,
+      zIndex: 100001,
       minWidth: 140,
       maxHeight: 200,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.15,
       shadowRadius: 8,
-      elevation: 8,
+      elevation: 10,
     },
     pickerItem: {
       flexDirection: 'row',
@@ -76,7 +79,7 @@ const LanguagePicker = ({ value, onValueChange, languages, colors }) => {
   });
   
   return (
-    <View>
+    <View style={{ zIndex: 1000 }}>
       <TouchableOpacity 
         style={styles.select} 
         onPress={() => setShowPicker(!showPicker)}

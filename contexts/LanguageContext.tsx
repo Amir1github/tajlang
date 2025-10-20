@@ -91,6 +91,7 @@ daysAgo: 'd ago',
     currentStreak: 'Current Streak',
     privacyPolicy: 'Privacy Policy',
     ourTeam: 'Our Team',
+    community: 'Community',
     days: 'lessons',
     recentAchievements: 'Recent Achievements',
     completed: 'Completed',
@@ -367,6 +368,7 @@ daysAgo: ' дн. назад',
     chatAssistant: 'Чат-помощник',
     privacyPolicy: 'Политика конфиденциальности',
     ourTeam: 'Наша команда',
+    community: 'Сообщество',
   }
 };
 

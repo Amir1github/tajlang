@@ -323,6 +323,7 @@ const styles = StyleSheet.create({
   collapseText: {
     fontSize: 16,
     fontWeight: '600',
+    
   },
   emptyContainer: {
     marginTop: 48,

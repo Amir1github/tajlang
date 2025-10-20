@@ -6,7 +6,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import Head from 'expo-router/head';
-import { Book, Trophy, User, CirclePlus as PlusCircle, Languages, MessageSquare, FileText } from 'lucide-react-native';
+import { Book, Trophy, User, CirclePlus as PlusCircle, Languages, MessageSquare, FileText, Users } from 'lucide-react-native';
 export const unstable_settings = {
   initialRouteName: "index", // твой главный экран
 };
@@ -98,6 +98,11 @@ function FloatingActionButton() {
     router.push('/chat');
   };
 
+  const handleCommunityPress = () => {
+    setMenuVisible(false);
+    router.push('/community' as any);
+  };
+
   
 
   return (
@@ -127,6 +132,11 @@ function FloatingActionButton() {
             <Text style={[styles.menuText, { color: colors.text }]}>{t('chatAssistant')}</Text>
           </TouchableOpacity>
           
+          <TouchableOpacity style={styles.menuItem} onPress={handleCommunityPress}>
+            <Users size={20} color={colors.primary} style={styles.menuIcon} />
+            <Text style={[styles.menuText, { color: colors.text }]}>{t('community')}</Text>
+          </TouchableOpacity>
+          
           
         </Animated.View>
       )}
@@ -149,6 +159,7 @@ function AppWithNavigation() {
         <Stack screenOptions={{ headerShown: false, animation: 'none' }} initialRouteName="index">
           <Stack.Screen name="index" />
           <Stack.Screen name="leaderboard" />
+          <Stack.Screen name="community" />
           <Stack.Screen name="profile" />
        
         </Stack>
