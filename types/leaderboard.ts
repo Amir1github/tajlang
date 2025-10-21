@@ -3,6 +3,7 @@ export interface LeaderboardUser {
   username: string;
   description: string | null;
   avatar_url: string | null;
+  background_image: string | null;
   xp_points: number;
   best_streak: number;
   status: 'online' | 'offline';

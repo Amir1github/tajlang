@@ -56,7 +56,7 @@ export default function LeaderboardScreen() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, description, avatar_url, xp_points, best_streak, status, last_seen, want_chats')
+        .select('id, username, description, avatar_url, background_image, xp_points, best_streak, status, last_seen, want_chats')
         .order('xp_points', { ascending: false })
         .limit(100);
 
@@ -157,7 +157,7 @@ export default function LeaderboardScreen() {
       setLoadingUserDetails(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, description, avatar_url, xp_points, best_streak, status, last_seen, want_chats')
+        .select('id, username, description, avatar_url, background_image, xp_points, best_streak, status, last_seen, want_chats')
         .eq('id', userId)
         .single();
 

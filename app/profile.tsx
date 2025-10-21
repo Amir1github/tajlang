@@ -41,6 +41,7 @@ export default function ProfileScreen() {
     error: actionError,
     success,
     pickImage,
+    pickBackgroundImage,
     updateProfile,
     handleSignOut,
     handleChangePassword,
@@ -100,6 +101,7 @@ export default function ProfileScreen() {
           onUsernameUpdate={(username) => updateProfile({ username })}
           onDescriptionUpdate={(description) => updateProfile({ description })}
           onPickImage={pickImage}
+          onPickBackgroundImage={pickBackgroundImage}
           error={error}
           success={success}
         />

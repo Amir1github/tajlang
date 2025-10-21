@@ -35,6 +35,7 @@ export type Profile = {
   username: string;
   description: string;
   avatar_url: string | null;
+  background_image: string | null;
   xp_points: number;
   current_streak: number;
   best_streak: number;

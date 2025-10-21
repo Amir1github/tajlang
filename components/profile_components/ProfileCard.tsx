@@ -15,6 +15,7 @@ interface ProfileCardProps {
   onUsernameUpdate: (username: string) => void;
   onDescriptionUpdate: (description: string) => void;
   onPickImage: () => void;
+  onPickBackgroundImage: () => void;
   error: string | null;
   success: boolean;
 }
@@ -30,6 +31,7 @@ export default function ProfileCard({
   onUsernameUpdate,
   onDescriptionUpdate,
   onPickImage,
+  onPickBackgroundImage,
   error,
   success,
 }: ProfileCardProps) {
@@ -64,20 +66,46 @@ export default function ProfileCard({
   };
 
   const defaultAvatarUrl = 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200&h=200&q=80&fit=crop';
+  const defaultBackgroundUrl = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=800&h=400&q=80&fit=crop';
+
+  // Debug: проверим что приходит в profile
+  console.log('ProfileCard - profile:', profile);
+  console.log('ProfileCard - background_image:', profile?.background_image);
 
   return (
     <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Pressable onPress={onPickImage}>
+      {/* Background Image */}
+      <Pressable onPress={onPickBackgroundImage} style={styles.backgroundContainer}>
         <Image
           source={{ 
-            uri: profile?.avatar_url || defaultAvatarUrl 
+            uri: profile?.background_image || defaultBackgroundUrl 
           }}
-          style={styles.avatar}
+          style={styles.backgroundImage}
+          onError={(error) => {
+            console.log('Background image error:', error);
+            console.log('Trying to load:', profile?.background_image || defaultBackgroundUrl);
+          }}
+          onLoad={() => {
+            console.log('Background image loaded successfully:', profile?.background_image || defaultBackgroundUrl);
+          }}
         />
-        <Text style={[styles.changePhotoText, { color: colors.primary }]}>
-          {t('changePhoto')}
-        </Text>
+        <View style={styles.backgroundOverlay} />
+        
+        
       </Pressable>
+
+      {/* Avatar positioned over background */}
+      <View style={styles.avatarContainer}>
+        <Pressable onPress={onPickImage}>
+          <Image
+            source={{ 
+              uri: profile?.avatar_url || defaultAvatarUrl 
+            }}
+            style={styles.avatar}
+          />
+          
+        </Pressable>
+      </View>
       
       <View style={styles.usernameContainer}>
         <TextInput
@@ -142,8 +170,10 @@ export default function ProfileCard({
 const styles = StyleSheet.create({
   profileCard: {
     borderRadius: 16,
-    padding: 24,
+    padding: 0,
     alignItems: 'center',
+    overflow: 'hidden',
+    position: 'relative',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -163,23 +193,73 @@ const styles = StyleSheet.create({
     }),
     borderWidth: Platform.select({ web: 0, default: 1 }),
   },
+  backgroundContainer: {
+    width: '100%',
+    height: 200,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  backgroundOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  changeBackgroundText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: 'white',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  avatarContainer: {
+    position: 'absolute',
+    top: 150,
+    alignItems: 'center',
+    zIndex: 10,
+  },
   avatar: {
     width: 120,
     height: 120,
     borderRadius: 60,
     marginBottom: 8,
-    borderWidth: 3,
-    borderColor: '#e2e8f0',
+    borderWidth: 4,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   changePhotoText: {
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 16,
+    color: 'white',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   usernameContainer: {
     width: '100%',
+    marginTop: 80,
     marginBottom: 8,
+    paddingHorizontal: 24,
     alignItems: 'center',
   },
   usernameInput: {
@@ -225,9 +305,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 8,
+    marginBottom: 24,
     padding: 8,
     backgroundColor: '#f3f4f6',
     borderRadius: 12,
+    marginHorizontal: 24,
   },
   streakText: {
     fontSize: 16,

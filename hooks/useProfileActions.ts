@@ -8,20 +8,20 @@ export function useProfileActions(userId: string | undefined, onProfileUpdate: (
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const uploadImage = async (file: File | Blob) => {
+  const uploadImage = async (file: File | Blob, bucket: 'avatars' | 'backgrounds' = 'avatars') => {
     try {
       const fileExt = 'jpg';
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from(bucket)
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
+        .from(bucket)
         .getPublicUrl(filePath);
 
       return publicUrl;
@@ -46,7 +46,7 @@ export function useProfileActions(userId: string | undefined, onProfileUpdate: (
           
           if (file) {
             try {
-              const uploadedUrl = await uploadImage(file);
+              const uploadedUrl = await uploadImage(file, 'avatars');
               await updateProfile({ avatar_url: uploadedUrl });
               await onProfileUpdate();
             } catch (error) {
@@ -69,7 +69,7 @@ export function useProfileActions(userId: string | undefined, onProfileUpdate: (
         if (!result.canceled) {
           const response = await fetch(result.assets[0].uri);
           const blob = await response.blob();
-          const uploadedUrl = await uploadImage(blob);
+          const uploadedUrl = await uploadImage(blob, 'avatars');
           await updateProfile({ avatar_url: uploadedUrl });
           await onProfileUpdate();
         }
@@ -77,6 +77,55 @@ export function useProfileActions(userId: string | undefined, onProfileUpdate: (
     } catch (error) {
       console.error('Error picking image:', error);
       setError('Failed to update profile picture');
+    }
+  };
+
+  const pickBackgroundImage = async () => {
+    try {
+      setError(null);
+      
+      if (Platform.OS === 'web') {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        
+        input.onchange = async (e: Event) => {
+          const target = e.target as HTMLInputElement;
+          const file = target.files?.[0];
+          
+          if (file) {
+            try {
+              const uploadedUrl = await uploadImage(file, 'backgrounds');
+              await updateProfile({ background_image: uploadedUrl });
+              await onProfileUpdate();
+            } catch (error) {
+              console.error('Error uploading background image:', error);
+              setError('Failed to upload background image');
+            }
+          }
+        };
+        
+        input.click();
+      } else {
+        
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [16, 9],
+          quality: 0.7,
+        });
+
+        if (!result.canceled) {
+          const response = await fetch(result.assets[0].uri);
+          const blob = await response.blob();
+          const uploadedUrl = await uploadImage(blob, 'backgrounds');
+          await updateProfile({ background_image: uploadedUrl });
+          await onProfileUpdate();
+        }
+      }
+    } catch (error) {
+      console.error('Error picking background image:', error);
+      setError('Failed to update background image');
     }
   };
 
@@ -131,6 +180,7 @@ export function useProfileActions(userId: string | undefined, onProfileUpdate: (
     error,
     success,
     pickImage,
+    pickBackgroundImage,
     updateProfile,
     handleSignOut,
     handleChangePassword,

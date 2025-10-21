@@ -84,7 +84,7 @@ export function useProfileData(userId: string | undefined, t: (key: string) => s
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, description, avatar_url, xp_points, current_streak, best_streak, last_completed_at, created_at, updated_at, status, last_seen, want_chats')
+        .select('id, username, description, avatar_url, background_image, xp_points, current_streak, best_streak, last_completed_at, created_at, updated_at, status, last_seen, want_chats')
         .eq('id', userId)
         .single();
 
