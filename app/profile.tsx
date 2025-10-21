@@ -11,6 +11,7 @@ import ProfileHeader from '@/components/profile_components/ProfileHeader';
 import ProfileCard from '@/components/profile_components/ProfileCard';
 import StatsContainer from '@/components/profile_components/StatsContainer';
 import AchievementsList from '@/components/profile_components/AchievementsList';
+import StudiedWordsList from '@/components/profile_components/StudiedWordsList';
 import AccountActions from '@/components/profile_components/AccountActions';
 import SettingsModal from '@/components/profile_components/SettingsModal';
 
@@ -57,6 +58,7 @@ export default function ProfileScreen() {
   }, [profile]);
 
   const completedLevels = userProgress.filter(progress => progress.completed).length;
+  const completedLevelIds = userProgress.filter(progress => progress.completed).map(progress => progress.level_id);
   const error = dataError || actionError;
 
   // Loading state
@@ -114,6 +116,12 @@ export default function ProfileScreen() {
         <AchievementsList 
           userProgress={userProgress}
           levels={levels}
+        />
+
+        <StudiedWordsList 
+          completedLevels={completedLevelIds}
+          colors={colors}
+          t={t}
         />
 
         <AccountActions
