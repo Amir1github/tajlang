@@ -27,7 +27,7 @@ TajLang — это сервис для изучения таджикского �
 
 Нет возрастных ограничений.
 
-Контакт: tajlang@gmail.com
+Контакт: khaitovamir@gmail.com
       `,
     },
     en: {
@@ -49,7 +49,7 @@ Features include:
 
 No age restrictions.
 
-Contact: tajlang@gmail.com
+Contact: khaitovamir@gmail.com
       `,
     },
     tj: {
@@ -71,7 +71,7 @@ TajLang — хидматрасон барои омӯзиши забони тоҷ
 
 Маҳдудияти синну сол нест.
 
-Тамос: tajlang@gmail.com
+Тамос: khaitovamir@gmail.com
       `,
     },
   };

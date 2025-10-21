@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   ActivityIndicator,
   Animated,
-  StyleSheet 
+  StyleSheet,
+  Platform 
 } from 'react-native';
 import LanguagePicker from './LanguagePicker';
 
@@ -29,7 +30,6 @@ const TranslatorBox = ({
   const swapAnim = useRef(new Animated.Value(0)).current;
 
   const handleSwapLanguages = () => {
-    // Animate swap
     Animated.sequence([
       Animated.timing(swapAnim, {
         toValue: 1,
@@ -49,15 +49,23 @@ const TranslatorBox = ({
   const styles = StyleSheet.create({
     translatorContainer: {
       backgroundColor: colors.card,
-      overflow: 'visible',
       borderRadius: 16,
       padding: 16,
       marginBottom: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 6,
-      elevation: 4,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 6,
+        },
+        android: {
+          elevation: 4,
+        },
+        web: {
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+        },
+      }),
     },
     translatorBox: {
       marginBottom: 12,
@@ -67,11 +75,15 @@ const TranslatorBox = ({
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 8,
+      minHeight: 32,
+      overflow: 'visible',
+      zIndex: 10,
     },
     label: {
       fontWeight: '700',
       color: colors.text,
       fontSize: 15,
+      flex: 1,
     },
     languageIndicator: {
       flexDirection: 'row',
@@ -98,16 +110,23 @@ const TranslatorBox = ({
       fontSize: 14,
       textAlignVertical: 'top',
       fontWeight: '500',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 1,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 2,
+        },
+        android: {
+          elevation: 1,
+        },
+      }),
     },
     swapContainer: {
       alignItems: 'center',
       justifyContent: 'center',
       marginVertical: 10,
+      zIndex: 1,
     },
     swapBtn: {
       width: 44,
@@ -116,11 +135,17 @@ const TranslatorBox = ({
       borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.3,
-      shadowRadius: 6,
-      elevation: 6,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.primary,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.3,
+          shadowRadius: 6,
+        },
+        android: {
+          elevation: 6,
+        },
+      }),
     },
     swapText: {
       fontSize: 18,
@@ -135,11 +160,17 @@ const TranslatorBox = ({
       borderRadius: 12,
       backgroundColor: colors.background,
       justifyContent: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 1,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 2,
+        },
+        android: {
+          elevation: 1,
+        },
+      }),
     },
     resultText: {
       color: colors.text,
@@ -169,7 +200,7 @@ const TranslatorBox = ({
   return (
     <View style={styles.translatorContainer}>
       {/* Input Section */}
-      <View style={styles.translatorBox}>
+      <View style={[styles.translatorBox, { zIndex: 20, overflow: 'visible' }]}>
         <View style={styles.labelContainer}>
           <Text style={styles.label}>
             {direction === 'to-tajik' ? t('inputLabel') : '📝 Таджикский текст'}
@@ -228,7 +259,7 @@ const TranslatorBox = ({
       </View>
       
       {/* Output Section */}
-      <View style={styles.translatorBox}>
+      <View style={[styles.translatorBox, { zIndex: 10, overflow: 'visible' }]}>
         <View style={styles.labelContainer}>
           <Text style={styles.label}>
             {direction === 'to-tajik' 

@@ -40,7 +40,7 @@ const TranslateButton = ({ onPress, isLoading, text, colors, t }) => {
       activeOpacity={0.8}
     >
       <Text style={styles.translateBtnText}>
-        {isLoading ? '🔄 ' + t('translating') : '🚀 ' + t('translate')}
+        {isLoading ? '🔄 ' + t('translating') : '🌐 ' + t('translate')}
       </Text>
     </TouchableOpacity>
   );
