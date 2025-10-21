@@ -125,7 +125,11 @@ export default function CommunityScreen() {
   ];
 
   const renderLabsContent = () => (
-    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+    style={styles.content} 
+    showsVerticalScrollIndicator={true}
+    contentContainerStyle={styles.contentContainer}
+  >
       {/* Header Section */}
       <View style={[styles.section, { backgroundColor: colors.card }]}>
         <View style={styles.sectionHeader}>
@@ -194,7 +198,11 @@ export default function CommunityScreen() {
   );
 
   const renderSocialContent = () => (
-    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+    style={styles.content} 
+    showsVerticalScrollIndicator={true}
+    contentContainerStyle={styles.contentContainer}
+  >
       {/* Header Section */}
       <View style={[styles.section, { backgroundColor: colors.card }]}>
         <View style={styles.sectionHeader}>
@@ -328,21 +336,51 @@ export default function CommunityScreen() {
         ))}
       </View>
 
-      {renderContent()}
+      <View style={styles.contentWrapper}>
+        {renderContent()}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  contentWrapper: {
+    flex:1,
+  },
   container: {
     flex: 1,
-    padding: 20,
+    // УБРАТЬ: padding: 20,
   },
+  
+  // Изменить:
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
     paddingTop: 8,
+    paddingHorizontal: 20,  // ДОБАВИТЬ
+  },
+  
+  // Изменить:
+  tabsContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    marginBottom: 16,
+    paddingHorizontal: 20,  // ДОБАВИТЬ
+  },
+  
+  // ДОБАВИТЬ новый стиль:
+ 
+  
+  // Изменить:
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,  // ДОБАВИТЬ
+  },
+  
+  // ДОБАВИТЬ новый стиль:
+  contentContainer: {
+    paddingBottom: 24,
   },
   headerIcon: {
     width: 48,
@@ -353,11 +391,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
   },
-  tabsContainer: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    marginBottom: 16,
-  },
+ 
   tab: {
     flex: 1,
     paddingVertical: 12,
@@ -381,9 +415,7 @@ const styles = StyleSheet.create({
   activeTabText: {
     fontWeight: '700',
   },
-  content: {
-    flex: 1,
-  },
+
   section: {
     marginBottom: 24,
   },
