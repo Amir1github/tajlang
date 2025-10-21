@@ -6,6 +6,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { createChat } from '@/lib/supabase';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+
 interface UserProfileModalProps {
   visible: boolean;
   user: LeaderboardUser | null;
@@ -18,7 +20,9 @@ interface UserProfileModalProps {
 const getStatusColor = (status: 'online' | 'offline') => {
   return status === 'online' ? '#22c55e' : '#6b7280';
 };
+
 const { t, colors, language } = useLanguage();
+
 const getStatusText = (status: 'online' | 'offline', lastSeen?: string | null, t?: (key: string) => string) => {
   if (status === 'online') {
     return t?.('online') || 'Online';
@@ -31,7 +35,7 @@ const getStatusText = (status: 'online' | 'offline', lastSeen?: string | null, t
     
     if (diffInMinutes < 60) {
       return `${diffInMinutes}m ago`;
-    } else if (diffInMinutes < 1440) { // 24 hours
+    } else if (diffInMinutes < 1440) {
       const hours = Math.floor(diffInMinutes / 60);
       return `${hours}h ago`;
     } else {
@@ -59,6 +63,24 @@ const getRankIcon = (rank: number) => {
     case 3: return <Award size={20} color="#CD7F32" />;
     default: return <Star size={20} color="#6366f1" />;
   }
+};
+
+const getRandomGradient = (userId: string): [string, string] => {
+  const gradients: [string, string][] = [
+    ['#667eea', '#764ba2'],
+    ['#f093fb', '#f5576c'],
+    ['#4facfe', '#00f2fe'],
+    ['#43e97b', '#38f9d7'],
+    ['#fa709a', '#fee140'],
+    ['#a8edea', '#fed6e3'],
+    ['#ff9a9e', '#fecfef'],
+    ['#ffecd2', '#fcb69f'],
+    ['#a18cd1', '#fbc2eb'],
+    ['#fad0c4', '#ffd1ff']
+  ];
+  
+  const index = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % gradients.length;
+  return gradients[index];
 };
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
@@ -91,6 +113,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   const canStartChat = user?.want_chats && user?.id !== currentUser?.id;
+
   return (
     <Modal
       animationType="fade"
@@ -116,21 +139,44 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </Text>
             </View>
           ) : user ? (
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <View style={styles.userDetailsContainer}>
+            <ScrollView 
+              style={styles.modalBody} 
+              showsVerticalScrollIndicator={true}
+              persistentScrollbar={true}
+            >
+              {/* Background Image or Gradient */}
+              <View style={styles.backgroundContainer}>
+                {user.background_image ? (
+                  <Image
+                    source={{ uri: user.background_image }}
+                    style={styles.backgroundImage}
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={getRandomGradient(user.id)}
+                    style={styles.backgroundGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  />
+                )}
+                <View style={styles.backgroundOverlay} />
+                
+                {/* Avatar positioned half in background */}
                 <View style={styles.avatarContainer}>
                   <Image
                     source={{ uri: user.avatar_url || 'https://i.imgur.com/mCHMpLT.png' }}
-                    style={styles.modalAvatar}
+                    style={[styles.modalAvatar, { borderColor: colors.card }]}
                   />
                   <Circle 
                     size={16} 
                     color={getStatusColor(user.status || 'offline')} 
                     fill={getStatusColor(user.status || 'offline')}
-                    style={styles.modalStatusIndicator}
+                    style={[styles.modalStatusIndicator, { borderColor: colors.card }]}
                   />
                 </View>
+              </View>
 
+              <View style={styles.userDetailsContainer}>
                 {/* Rank Badge */}
                 <View style={[styles.rankBadge, { backgroundColor: colors.secondary }]}>
                   {getRankIcon(user.rank)}
@@ -152,7 +198,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 {/* Status */}
                 <View style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-                  {t('Status')}
+                    {t('Status')}
                   </Text>
                   <View style={styles.statusDetailContainer}>
                     <Circle 
@@ -196,20 +242,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     {user.best_streak || 0} {t('lessons')}
                   </Text>
                 </View>
-              </View>
 
-              {/* Start Chat Button */}
-              {canStartChat && (
-                <View style={styles.chatButtonContainer}>
-                  <Pressable
-                    style={[styles.chatButton, { backgroundColor: colors.primary }]}
-                    onPress={handleStartChat}
-                  >
-                    <MessageCircle size={20} color="#fff" />
-                    <Text style={styles.chatButtonText}>Начать чат</Text>
-                  </Pressable>
-                </View>
-              )}
+                {/* Start Chat Button */}
+                {canStartChat && (
+                  <View style={styles.chatButtonContainer}>
+                    <Pressable
+                      style={[styles.chatButton, { backgroundColor: colors.primary }]}
+                      onPress={handleStartChat}
+                    >
+                      <MessageCircle size={20} color="#fff" />
+                      <Text style={styles.chatButtonText}>Начать чат</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
             </ScrollView>
           ) : null}
         </View>
@@ -230,7 +276,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     width: '100%',
     maxWidth: 400,
-    maxHeight: '100%',
+    maxHeight: '90%',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -262,8 +308,34 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   modalBody: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    flex: 1,
+  },
+  backgroundContainer: {
+    height: 150,
+    position: 'relative',
+    marginBottom: 60,
+  },
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  backgroundGradient: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  backgroundOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   modalLoading: {
     padding: 40,
@@ -275,6 +347,8 @@ const styles = StyleSheet.create({
   },
   userDetailsContainer: {
     gap: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   rankBadge: {
     flexDirection: 'row',
@@ -315,26 +389,33 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     alignItems: 'center',
-    marginTop: 8,
+    position: 'absolute',
+    bottom: -50,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
   modalAvatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    borderWidth: 3,
-    borderColor: '#e2e8f0',
+    borderWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   modalStatusIndicator: {
     position: 'absolute',
     bottom: 4,
-    right: 4,
+    right: '50%',
+    marginRight: -54,
     borderWidth: 3,
-    borderColor: '#ffffff',
     borderRadius: 10,
   },
   chatButtonContainer: {
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingTop: 10,
   },
   chatButton: {
     flexDirection: 'row',
