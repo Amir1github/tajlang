@@ -474,3 +474,51 @@ export function subscribeToMessages(userId: string, callback: (message: Message)
 
   return channel;
 }
+
+// Получить изученные слова пользователя
+export async function getStudiedWords(completedLevelIds: string[]): Promise<{ words: Word[]; error: Error | null }> {
+  try {
+    if (completedLevelIds.length === 0) {
+      return { words: [], error: null };
+    }
+
+    const { data, error } = await supabase
+      .from('words')
+      .select('*')
+      .in('level_id', completedLevelIds)
+      .order('tajik');
+
+    if (error) throw error;
+    return { words: data || [], error: null };
+  } catch (error) {
+    console.error('Error getting studied words:', error);
+    return { words: [], error: error as Error };
+  }
+}
+
+// Добавить новое слово пользователя
+export async function addUserWord(wordData: {
+  tajik: string;
+  english: string;
+  russian: string;
+  explanation: string;
+  ru_explanation: string;
+  examples: string[];
+}): Promise<{ word: Word | null; error: Error | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('words')
+      .insert({
+        level_id: null, // Пользовательские слова не привязаны к уровню
+        ...wordData
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { word: data, error: null };
+  } catch (error) {
+    console.error('Error adding user word:', error);
+    return { word: null, error: error as Error };
+  }
+}
