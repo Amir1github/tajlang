@@ -96,7 +96,7 @@ async function handleGoogleSignIn() {
             resizeMode="contain"
           />
           <Animated.Text entering={FadeInDown.duration(500)} style={styles.title}>
-            Welcome Back 👋
+            Welcome to Tajlang👋
           </Animated.Text>
 
           {error && (

@@ -5,7 +5,9 @@ import {
   View, 
   ScrollView, 
   Animated,
-  StyleSheet
+  StyleSheet,
+  Platform,
+  useWindowDimensions
 } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Header from '@/components/translator-components/Header';
@@ -18,6 +20,10 @@ import InfoCard from '@/components/translator-components/InfoCard';
 const Translator = () => {
   const router = useRouter();
   const { t, colors, language } = useLanguage();
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
+  const isTablet = width > 480 && width <= 768;
+  
   const [text, setText] = useState('');
   const [translation, setTranslation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +34,7 @@ const Translator = () => {
   
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
   const resultAnim = useRef(new Animated.Value(0)).current;
   
   const supportedLanguages = [
@@ -48,12 +54,13 @@ const Translator = () => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 600,
+        duration: 500,
         useNativeDriver: true,
       }),
-      Animated.timing(slideAnim, {
+      Animated.spring(slideAnim, {
         toValue: 0,
-        duration: 600,
+        tension: 80,
+        friction: 10,
         useNativeDriver: true,
       })
     ]).start();
@@ -126,8 +133,34 @@ const Translator = () => {
       flex: 1,
       backgroundColor: colors.background,
     },
+    scrollContent: {
+      flexGrow: 1,
+    },
     content: {
-      padding: 16,
+      maxWidth: isDesktop ? 900 : '100%',
+      alignSelf: 'center',
+      width: '100%',
+      paddingHorizontal: isDesktop ? 24 : isTablet ? 20 : 16,
+      paddingVertical: isDesktop ? 24 : isTablet ? 16 : 12,
+      gap: isDesktop ? 20 : isTablet ? 16 : 12,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: isDesktop ? 16 : 12,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 3,
+        },
+        web: {
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+        },
+      }),
     },
   });
 
@@ -141,7 +174,11 @@ const Translator = () => {
         }
       ]}
     >
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.content}>
           <Header t={t} colors={colors} />
           
