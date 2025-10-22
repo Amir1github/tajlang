@@ -177,7 +177,8 @@ const Translator = () => {
       <ScrollView 
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        persistentScrollbar={true}
       >
         <View style={styles.content}>
           <Header t={t} colors={colors} />
